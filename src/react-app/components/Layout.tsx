@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@getmocha/users-service/react';
-import { useNavigate, useLocation } from 'react-router';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
   Hanger,
