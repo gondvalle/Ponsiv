@@ -1,6 +1,6 @@
 import { describe, it, vi } from "vitest";
 import { render } from "@testing-library/react";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter } from "react-router-dom";
 import Explore from "../pages/Explore";
 import Looks from "../pages/Looks";
 import Feed from "../pages/Feed";
