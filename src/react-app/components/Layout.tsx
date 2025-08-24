@@ -1,10 +1,10 @@
 import { ReactNode } from 'react';
-import { useAuth } from '@getmocha/users-service/react';
+import { useAuth } from '@/react-app/auth-shim';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Home,
-  Hanger,
-  Tshirt,
+  Sparkles,
+  Shirt,
   ShoppingBag,
   Bell,
   MessageCircle,
@@ -27,8 +27,8 @@ export default function Layout({ children }: LayoutProps) {
 
   const navItems = [
     { icon: Home, label: 'Inicio', path: '/' },
-    { icon: Hanger, label: 'Looks', path: '/looks' },
-    { icon: Tshirt, label: 'Feed', path: '/feed' },
+    { icon: Sparkles, label: 'Looks', path: '/looks' },
+    { icon: Shirt, label: 'Feed', path: '/feed' },
     { icon: ShoppingBag, label: 'Carrito', path: '/cart' },
     { icon: undefined, label: 'Perfil', path: '/profile' },
   ];
@@ -84,7 +84,7 @@ export default function Layout({ children }: LayoutProps) {
                     <Icon className="w-6 h-6" />
                   ) : (
                     <img
-                      src={user?.google_user_data.picture || ''}
+                      src={user?.avatar || ''}
                       alt="avatar"
                       className="w-6 h-6 rounded-full border border-white"
                     />

@@ -1,4 +1,4 @@
-import { useAuth } from '@getmocha/users-service/react';
+import { useAuth } from '@/react-app/auth-shim';
 import { Sparkles, Shirt, Heart, Users } from 'lucide-react';
 
 interface LoginModalProps {
@@ -13,7 +13,9 @@ export default function LoginModal({ isOpen, onClose }: LoginModalProps) {
 
   const handleLogin = async () => {
     try {
+      // Simula login local: simplemente cierra el modal
       await redirectToLogin();
+      onClose();
     } catch (error) {
       console.error('Login failed:', error);
     }
