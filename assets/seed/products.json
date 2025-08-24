@@ -1,0 +1,25 @@
+[
+  {
+    "id": "p1",
+    "brand": "Nicoli",
+    "title": "Camisa romántica blanca",
+    "price": 32.5,
+    "images": ["https://images.unsplash.com/photo-1520974679510-6e0f7f2f63b9"],
+    "sizes": ["XS", "S", "M", "L"],
+    "color": "Blanco",
+    "category": "Camisas",
+    "stock": 10,
+    "checkout_url": "https://example.com/checkout/p1"
+  },
+  {
+    "id": "p2",
+    "brand": "Zara",
+    "title": "Pantalón vaquero azul",
+    "price": 45.0,
+    "images": ["https://images.unsplash.com/photo-1541099649105-f69ad21f3246"],
+    "sizes": ["S", "M", "L"],
+    "color": "Azul",
+    "category": "Pantalones",
+    "stock": 8
+  }
+]
