@@ -1,4 +1,4 @@
-import { describe, it, vi } from "vitest";
+import { describe, it } from "vitest";
 import { render } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import Explore from "../pages/Explore";
@@ -6,11 +6,6 @@ import Looks from "../pages/Looks";
 import Feed from "../pages/Feed";
 import Cart from "../pages/Cart";
 import Profile from "../pages/Profile";
-
-vi.mock("@getmocha/users-service/react", () => ({
-  useAuth: () => ({ user: { google_user_data: { picture: "" } }, logout: async () => {} }),
-  AuthProvider: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
-}));
 
 describe("pages render", () => {
   it("renders explore", () => {
