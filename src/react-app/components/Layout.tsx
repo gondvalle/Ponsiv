@@ -1,7 +1,15 @@
 import { ReactNode } from 'react';
 import { useAuth } from '@getmocha/users-service/react';
 import { useNavigate, useLocation } from 'react-router';
-import { Home, Shirt, Users, Heart, LogOut } from 'lucide-react';
+import {
+  Home,
+  Hanger,
+  Tshirt,
+  ShoppingBag,
+  Bell,
+  MessageCircle,
+  LogOut,
+} from 'lucide-react';
 
 interface LayoutProps {
   children: ReactNode;
@@ -18,10 +26,11 @@ export default function Layout({ children }: LayoutProps) {
   };
 
   const navItems = [
-    { icon: Home, label: 'Feed', path: '/' },
-    { icon: Shirt, label: 'Armario', path: '/wardrobe' },
-    { icon: Heart, label: 'Outfits', path: '/outfits' },
-    { icon: Users, label: 'Social', path: '/social' },
+    { icon: Home, label: 'Inicio', path: '/' },
+    { icon: Hanger, label: 'Looks', path: '/looks' },
+    { icon: Tshirt, label: 'Feed', path: '/feed' },
+    { icon: ShoppingBag, label: 'Carrito', path: '/cart' },
+    { icon: undefined, label: 'Perfil', path: '/profile' },
   ];
 
   return (
@@ -29,30 +38,25 @@ export default function Layout({ children }: LayoutProps) {
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 bg-black/20 backdrop-blur-md border-b border-white/10">
         <div className="max-w-screen-xl mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Ponsiv
-          </h1>
-          
-          {user && (
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <img
-                  src={user.google_user_data.picture || ''}
-                  alt={user.google_user_data.name || ''}
-                  className="w-8 h-8 rounded-full border-2 border-purple-400"
-                />
-                <span className="text-white text-sm hidden sm:block">
-                  {user.google_user_data.given_name}
-                </span>
-              </div>
+          <h1 className="text-2xl font-bold text-white">PONSIV</h1>
+
+          <div className="flex items-center gap-4">
+            <button aria-label="Notificaciones" className="relative text-white">
+              <Bell className="w-6 h-6" />
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full px-1">1</span>
+            </button>
+            <button aria-label="Mensajes" className="relative text-white">
+              <MessageCircle className="w-6 h-6" />
+            </button>
+            {user && (
               <button
                 onClick={handleLogout}
                 className="p-2 text-gray-400 hover:text-white transition-colors"
               >
                 <LogOut className="w-5 h-5" />
               </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </header>
 
@@ -76,7 +80,15 @@ export default function Layout({ children }: LayoutProps) {
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  <Icon className="w-6 h-6" />
+                  {Icon ? (
+                    <Icon className="w-6 h-6" />
+                  ) : (
+                    <img
+                      src={user?.google_user_data.picture || ''}
+                      alt="avatar"
+                      className="w-6 h-6 rounded-full border border-white"
+                    />
+                  )}
                   <span className="text-xs font-medium">{label}</span>
                 </button>
               ))}

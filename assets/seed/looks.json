@@ -1,0 +1,9 @@
+[
+  {
+    "id": "l1",
+    "title": "Look Casual elegante",
+    "author": {"name": "Marta", "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9"},
+    "products": ["p1", "p2"],
+    "cover_image": "https://images.unsplash.com/photo-1490481651871-ab68de25d43d"
+  }
+]

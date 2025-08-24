@@ -1,0 +1,14 @@
+[
+  {
+    "id": "u1",
+    "name": "Marta",
+    "handle": "martaLooks",
+    "avatar": "https://images.unsplash.com/photo-1517841905240-472988babdf9",
+    "following": 120,
+    "followers": 80,
+    "outfitsCount": 4,
+    "wardrobe": ["p1"],
+    "likes": ["p2"],
+    "orders": ["o1"]
+  }
+]
