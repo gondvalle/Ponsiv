@@ -123,6 +123,7 @@ app.get('/api/feed', async (c) => {
       nextPage: hasMore ? page + 1 : null,
     });
   } catch (error) {
+    console.error('Failed to fetch feed:', error);
     return c.json({ error: 'Failed to fetch feed' }, 500);
   }
 });
@@ -145,6 +146,7 @@ app.post('/api/interactions', authMiddleware, zValidator("json", CreateInteracti
 
     return c.json({ success: true });
   } catch (error) {
+    console.error('Failed to record interaction:', error);
     return c.json({ error: 'Failed to record interaction' }, 500);
   }
 });
@@ -184,6 +186,7 @@ app.get('/api/wardrobe', authMiddleware, async (c) => {
 
     return c.json(wardrobeItems);
   } catch (error) {
+    console.error('Failed to fetch wardrobe:', error);
     return c.json({ error: 'Failed to fetch wardrobe' }, 500);
   }
 });
@@ -213,6 +216,7 @@ app.post('/api/wardrobe', authMiddleware, zValidator("json", AddToWardrobeSchema
 
     return c.json({ success: true });
   } catch (error) {
+    console.error('Failed to add to wardrobe:', error);
     return c.json({ error: 'Failed to add to wardrobe' }, 500);
   }
 });
@@ -229,7 +233,7 @@ app.get('/api/outfits', async (c) => {
       LEFT JOIN outfit_likes ol ON o.id = ol.outfit_id
     `;
     
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     if (isPublic) {
       query += ' WHERE o.is_public = 1';
     } else if (user) {
@@ -280,6 +284,7 @@ app.post('/api/outfits', authMiddleware, zValidator("json", CreateOutfitSchema),
 
     return c.json({ success: true, outfit_id: outfitId });
   } catch (error) {
+    console.error('Failed to create outfit:', error);
     return c.json({ error: 'Failed to create outfit' }, 500);
   }
 });

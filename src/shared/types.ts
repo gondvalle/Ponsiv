@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export interface Product {
   id: string;
   brand: string;
@@ -41,3 +43,26 @@ export interface User {
   likes: string[];
   orders: string[];
 }
+
+export const CreateInteractionSchema = z.object({
+  product_id: z.string(),
+  interaction_type: z.string(),
+  interaction_data: z.record(z.any()).optional(),
+});
+
+export const AddToWardrobeSchema = z.object({
+  product_id: z.string().optional(),
+  custom_item_name: z.string().optional(),
+  custom_item_image_url: z.string().optional(),
+  custom_item_category: z.string().optional(),
+  custom_item_color: z.string().optional(),
+  custom_item_brand: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+});
+
+export const CreateOutfitSchema = z.object({
+  name: z.string(),
+  description: z.string().optional(),
+  wardrobe_item_ids: z.array(z.number()),
+  is_public: z.boolean().optional(),
+});
