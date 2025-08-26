@@ -6,6 +6,8 @@ from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.toolbar import MDTopAppBar
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.card import MDCard
+from kivymd.uix.fitimage import FitImage
+from kivymd.uix.relativelayout import MDRelativeLayout
 
 from .screens.feed import FeedScreen
 from .screens.explore import ExploreScreen
@@ -76,29 +78,41 @@ class PonsivApp(MDApp):
 
         root = MDBoxLayout(orientation="vertical")
 
-        # ── TOP BAR estilo mock: transparente, título "PONSIV" y dos iconos a la derecha ──
-        root = MDBoxLayout(orientation="vertical")
-        top_container = MDBoxLayout(
-            size_hint=(1, None),
-            height=dp(50),  # Altura fija para el contenedor
-        )
+        # ── Contenedor relativo para superponer topbar + logo centrado ──
+        top_container = MDRelativeLayout(size_hint=(1, None), height=dp(56))
+
         top = MDTopAppBar(
-            title="PONSIV",
+            title="",
             md_bg_color=(1, 1, 1, 1),
             elevation=0,
+            left_action_items=[],  # sin icono a la izquierda
             right_action_items=[
                 ["heart-outline", lambda x: None],
                 ["account-outline", lambda x: self.switch_screen("profile")],
             ],
             size_hint=(1, None),
-            height=dp(50),  # Igualar la altura al contenedor
-            pos_hint={"center_y": 0.5},  # Centra la topbar en el contenedor
+            height=dp(56),
         )
+        # Color de iconos/texto (negro)
         try:
             top.specific_text_color = (0, 0, 0, 1)
         except Exception:
             pass
+
+        # Logo centrado y alineado verticalmente con los iconos
+        logo = FitImage(
+            source="assets/logos/Ponsiv.png",
+            size_hint=(None, None),
+            # altura ~ 28-32 dp funciona bien con toolbar de 56 dp
+            height=dp(28),
+            width=dp(100),   # ajusta si necesitas otra proporción
+            pos_hint={"center_x": 0.2, "center_y": 0.5},
+        )
+
+        # Añadimos ambos al contenedor relativo (el orden importa: primero la barra)
         top_container.add_widget(top)
+        top_container.add_widget(logo)
+
         root.add_widget(top_container)
 
         # ── Contenido principal ──
