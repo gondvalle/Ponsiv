@@ -1,19 +1,17 @@
-## Ponsiv
+# Ponsiv
 
-## Run (100% local)
-```bash
-npm install
-npm run dev
-```
+A small Kivy/KivyMD demo application.
 
-The app does not require a backend or environment variables. Data is loaded from `assets/seed/*.json`.
-
-### Tests
+## Setup
 
 ```bash
-npm test
+pip install -r requirements.txt
 ```
 
-### Seed data
+## Run
 
-Initial data lives in `assets/seed/*.json`. Modify these files to change products, looks, users or orders loaded by the app.
+```bash
+python -m ponsiv.main
+```
+
+The app loads seed data from `assets/seed/*.json` on startup. The window is fixed at **360×640** and uses a dark theme.
