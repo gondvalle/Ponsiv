@@ -69,13 +69,19 @@ class PonsivStore:
         email: str,
         password: str,
         *,
+        name: Optional[str] = None,
+        handle: Optional[str] = None,
         age: Optional[int] = None,
         city: Optional[str] = None,
         sex: Optional[str] = None,
     ) -> int:
         password_hash = hashlib.sha256(password.encode()).hexdigest()
-        name = email.split("@")[0]
-        handle = name
+        # valores por defecto si no vienen
+        if not name:
+            name = email.split("@")[0]
+        if not handle:
+            handle = name
+
         with self.conn:
             cur = self.conn.execute(
                 """
@@ -98,6 +104,11 @@ class PonsivStore:
 
     def get_user_by_email(self, email: str) -> Optional[int]:
         cur = self.conn.execute("SELECT id FROM users WHERE email=?", (email,))
+        row = cur.fetchone()
+        return row["id"] if row else None
+
+    def get_user_by_handle(self, handle: str) -> Optional[int]:
+        cur = self.conn.execute("SELECT id FROM users WHERE handle=?", (handle,))
         row = cur.fetchone()
         return row["id"] if row else None
 

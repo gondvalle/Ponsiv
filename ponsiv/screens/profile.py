@@ -25,35 +25,39 @@ class ProfileScreen(MDScreen):
 
         root = MDBoxLayout(orientation="vertical", padding=(dp(16), dp(8)), spacing=dp(8))
 
-        # ── Encabezado: avatar + nombre/handle ──────────────────────────────────
-        header = MDBoxLayout(orientation="vertical", spacing=dp(6), size_hint=(1, None))
+        # ── Encabezado:  Foto, nombre, handle (en ese orden), todo centrado ──
+        header = MDBoxLayout(orientation="vertical", spacing=dp(18), size_hint=(1, None))
         header.height = dp(160)
 
-        # Avatar circular
-        avatar_wrap = MDCard(size_hint=(None, None), size=(dp(76), dp(76)), radius=[dp(38)],
-                             elevation=0, md_bg_color=(1, 1, 1, 1))
+        # Foto (avatar) debajo
+        avatar_wrap = MDCard(size_hint=(None, None), size=(dp(70), dp(70)),
+                             radius=[dp(45)], elevation=0, md_bg_color=(1, 1, 1, 1))
         if user and user.avatar_path:
             avatar_wrap.add_widget(FitImage(source=user.avatar_path))
         else:
-            # Placeholder usando el logo si no hay avatar
             avatar_wrap.add_widget(FitImage(source="assets/logos/Ponsiv.png"))
-
-        avatar_row = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(80))
-        avatar_row.add_widget(MDBoxLayout(size_hint_x=None, width=dp(8)))
+        avatar_row = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(100))
+        avatar_row.add_widget(MDBoxLayout(size_hint_x=1))
         avatar_row.add_widget(avatar_wrap)
-        root.add_widget(avatar_row)
+        avatar_row.add_widget(MDBoxLayout(size_hint_x=1))
+        header.add_widget(avatar_row)
 
-        # Nombre + handle
-        name = user.name if (user and user.name) else "Usuario"
+        name = (user.name if (user and user.name) else "Usuario")
         handle = f"@{(user.handle if user and user.handle else 'ponsiver')}"
-        header.add_widget(MDLabel(text=name, halign="center", font_size="18sp",
-                                  theme_text_color="Custom", text_color=(0, 0, 0, 1)))
-        header.add_widget(MDLabel(text=handle, halign="center", font_size="13sp",
-                                  theme_text_color="Custom", text_color=(0, 0, 0, 0.6)))
 
-        # Métricas (mock simples: Following, Followers, Outfits = likes)
-        metrics = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(40), spacing=dp(16),
-                              padding=(dp(16), 0))
+        header.add_widget(MDLabel(
+            text=name, halign="center", font_size="20sp", bold=True,
+            theme_text_color="Custom", text_color=(0, 0, 0, 1)
+        ))
+        header.add_widget(MDLabel(
+            text=handle, halign="center", font_size="13sp",
+            theme_text_color="Custom", text_color=(0, 0, 0, 0.65)
+        ))
+
+
+        # Métricas
+        metrics = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(40),
+                              spacing=dp(16), padding=(dp(16), 0))
         metrics.add_widget(self._metric_column(outfits_count if outfits_count else 0, "Outfits"))
         metrics.add_widget(self._metric_column(0, "Siguiendo"))
         metrics.add_widget(self._metric_column(0, "Seguidores"))
@@ -61,10 +65,9 @@ class ProfileScreen(MDScreen):
 
         root.add_widget(header)
 
-        # ── Tabs de sección (solo ❤️ activo de momento) ─────────────────────────
+        # Tabs (igual que antes)
         tabs = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(40),
                            padding=(dp(8), 0), spacing=dp(6))
-        # Íconos: camiseta, corazón, archivos, bolsa (mismo orden del mock)
         for icon, active in (("tshirt-crew", False), ("heart", True), ("file-document-outline", False), ("shopping-outline", False)):
             btn = MDIconButton(icon=icon, theme_text_color="Custom",
                                text_color=(0, 0, 0, 1 if active else 0.45),
@@ -72,21 +75,19 @@ class ProfileScreen(MDScreen):
             tabs.add_widget(btn)
         root.add_widget(tabs)
 
-        # ── Grid de likes (2 columnas) dentro de ScrollView ─────────────────────
+        # ── Grid de likes: 1 columna y tarjetas altas para ocupar más pantalla ──
         scroll = ScrollView(size_hint=(1, 1))
-        grid = GridLayout(cols=2, padding=[dp(8), dp(8)], spacing=dp(8),
-                          size_hint_y=None)
+        grid = GridLayout(cols=2, padding=[dp(8), dp(8)], spacing=dp(10), size_hint_y=None)
         grid.bind(minimum_height=grid.setter("height"))
 
         for pid in likes:
             product = store.products.get(pid)
             if not product:
                 continue
-            grid.add_widget(self._product_card(product))
+            grid.add_widget(self._product_card_big2col(product))
 
-        # Si no hay likes, mensaje amable
         if not likes:
-            grid.add_widget(MDLabel(text="Aún no has dado ❤️ a ninguna prenda.",
+            grid.add_widget(MDLabel(text="Aún no has dado like a ninguna prenda.",
                                     size_hint_y=None, height=dp(40),
                                     theme_text_color="Custom", text_color=(0, 0, 0, 0.6)))
 
@@ -94,6 +95,39 @@ class ProfileScreen(MDScreen):
         root.add_widget(scroll)
 
         self.add_widget(root)
+
+    def _product_card_big2col(self, product) -> MDCard:
+        """
+        Tarjeta grande para grid de 2 columnas: imagen alta + franja inferior.
+        Más grande que la versión anterior (height ~ 280 dp).
+        """
+        card = MDCard(size_hint=(1, None), height=dp(280), radius=[dp(16)],
+                    elevation=0, md_bg_color=(1, 1, 1, 1))
+        box = MDBoxLayout(orientation="vertical")
+
+        # Imagen (ocupa la mayor parte)
+        if product.images:
+            box.add_widget(FitImage(source=product.images[0], size_hint=(1, 1)))
+        else:
+            box.add_widget(MDLabel(text="Sin imagen", halign="center"))
+
+        # Franja inferior (marca y precio)
+        info = MDBoxLayout(orientation="vertical", size_hint=(1, None), height=dp(56),
+                        padding=(dp(10), dp(6)))
+        info.add_widget(MDLabel(text=product.brand or "", font_size="12sp",
+                                theme_text_color="Custom", text_color=(0, 0, 0, 0.8)))
+        info.add_widget(MDLabel(text=f"{product.price:.2f} €", font_size="13sp", bold=True,
+                                theme_text_color="Custom", text_color=(0, 0, 0, 1)))
+        box.add_widget(info)
+
+        card.add_widget(box)
+
+        # Tap → detalle
+        card.bind(on_touch_up=lambda inst, touch, pid=product.id:
+                self._open_detail_if_hit(inst, touch, pid))
+        return card
+
+
 
     # ───────────────────────── Helpers UI ───────────────────────────────────────
     def _metric_column(self, number: int, label: str) -> MDBoxLayout:

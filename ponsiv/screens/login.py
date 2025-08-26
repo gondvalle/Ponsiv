@@ -118,8 +118,15 @@ class LoginScreen(MDScreen):
     def _build_signup_form(self):
         wrap = MDBoxLayout(orientation="vertical", spacing=dp(8), size_hint=(1, None))
 
+        # NUEVOS campos
+        name_card = self._filled_field("Nombre")
+        handle_card = self._filled_field("Nombre de usuario (sin @)")
+
         email_card = self._filled_field("Email")
         pass_card = self._filled_field("Contraseña (mín. 6)", password=True)
+
+        self.signup_name = name_card.children[0]
+        self.signup_handle = handle_card.children[0]
         self.signup_email = email_card.children[0]
         self.signup_password = pass_card.children[0]
 
@@ -133,7 +140,7 @@ class LoginScreen(MDScreen):
         grid.add_widget(age_card)
         grid.add_widget(city_card)
 
-        # Sexo chips (compatibles 1.1.1)
+        # Sexo chips
         sex_box = MDBoxLayout(orientation="horizontal", spacing=dp(6), size_hint=(1, None), height=dp(34))
         sex_label = MDLabel(text="Sexo:", size_hint=(None, 1), width=dp(50),
                             theme_text_color="Custom", text_color=IOS_SUBTEXT)
@@ -141,7 +148,7 @@ class LoginScreen(MDScreen):
         self.sex_value = None
         self.sex_chips = []
         for label in ("Mujer", "Hombre", "Otro"):
-            chip = MDChip(text=label)  # sin 'check' en 1.1.1
+            chip = MDChip(text=label)
             chip.bind(on_release=lambda inst, l=label: self._select_sex(inst, l))
             self.sex_chips.append(chip)
             sex_box.add_widget(chip)
@@ -149,16 +156,20 @@ class LoginScreen(MDScreen):
         btn = MDRaisedButton(text="Crear cuenta", size_hint=(1, None), height=dp(44),
                              on_release=self.handle_signup)
 
+        # Montaje
+        wrap.add_widget(name_card)
+        wrap.add_widget(handle_card)
         wrap.add_widget(email_card)
         wrap.add_widget(pass_card)
         wrap.add_widget(grid)
         wrap.add_widget(sex_box)
         wrap.add_widget(btn)
 
-        # Altura aprox: 48*4 + 44 + 8*4 = 252
+        # Altura aprox: 48*6 + 44 + 8*6 = 404
         wrap.size_hint_y = None
-        wrap.height = dp(252)
+        wrap.height = dp(404)
         return wrap
+
 
     # ───────────── render / toggle ─────────────
     def _switch(self, mode: str):
@@ -215,12 +226,20 @@ class LoginScreen(MDScreen):
         self.manager.current = "feed"
 
     def handle_signup(self, *_):
+        name = (self.signup_name.text or "").strip()
+        handle = (self.signup_handle.text or "").strip().lstrip("@")
         email = (self.signup_email.text or "").strip()
         password = self.signup_password.text or ""
         age_txt = (self.signup_age.text or "").strip()
         city = (self.signup_city.text or "").strip()
         sex = self.sex_value
 
+        if not name:
+            self.message.text = "Introduce tu nombre."
+            return
+        if not handle:
+            self.message.text = "Elige un nombre de usuario."
+            return
         if not email or not password:
             self.message.text = "Email y contraseña son obligatorios."
             return
@@ -228,13 +247,21 @@ class LoginScreen(MDScreen):
             self.message.text = "La contraseña debe tener 6+ caracteres."
             return
 
-        age = int(age_txt) if age_txt.isdigit() else None
-
+        # Unicidad básica
         if store.get_user_by_email(email) is not None:
             self.message.text = "Ese email ya está registrado. Inicia sesión."
             self._switch("login")
             return
+        if store.get_user_by_handle(handle) is not None:
+            self.message.text = "Ese nombre de usuario ya existe. Prueba otro."
+            return
 
-        user_id = store.create_user(email, password, age=age, city=city or None, sex=sex or None)
+        age = int(age_txt) if age_txt.isdigit() else None
+
+        user_id = store.create_user(
+            email, password,
+            name=name, handle=handle,
+            age=age, city=city or None, sex=sex or None
+        )
         store.current_user_id = user_id
         self.manager.current = "feed"
