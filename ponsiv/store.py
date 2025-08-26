@@ -17,26 +17,53 @@ class PonsivStore:
         self.cart: List[str] = []
 
     def load_seed(self) -> None:
-        """Load seed data from ``assets/seed`` relative to repository root."""
-        seed_path = Path(__file__).resolve().parent.parent / "assets" / "seed"
-        with open(seed_path / "products.json", "r", encoding="utf-8") as fh:
-            for data in json.load(fh):
-                product = Product(**data)
-                self.products[product.id] = product
-        with open(seed_path / "looks.json", "r", encoding="utf-8") as fh:
-            for data in json.load(fh):
-                author = LookAuthor(**data["author"])
-                look = Look(id=data["id"], title=data["title"], author=author,
-                            products=data["products"], cover_image=data["cover_image"])
-                self.looks[look.id] = look
-        with open(seed_path / "users.json", "r", encoding="utf-8") as fh:
-            for data in json.load(fh):
-                user = User(**data)
-                self.users[user.id] = user
-        with open(seed_path / "orders.json", "r", encoding="utf-8") as fh:
-            for data in json.load(fh):
-                order = Order(**data)
-                self.orders.append(order)
+        """Load product data from the ``assets`` directory.
+
+        Each product has a JSON description in ``assets/informacion`` and an
+        image with the same file name in ``assets/prendas``. Brand logos are
+        located in ``assets/logos``. New products can be added simply by
+        placing the corresponding JSON and image files in these folders.
+        """
+        base_path = Path(__file__).resolve().parent.parent / "assets"
+        info_path = base_path / "informacion"
+        image_path = base_path / "prendas"
+        logo_path = base_path / "logos"
+
+        for info_file in sorted(info_path.glob("*.json")):
+            with open(info_file, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+
+            pid = info_file.stem
+            brand = data.get("marca", "")
+            title = data.get("nombre", pid)
+            price = data.get("precio", 0.0)
+            sizes = data.get("tallas", [])
+
+            image_file = None
+            for ext in (".jpg", ".png"):
+                candidate = image_path / f"{pid}{ext}"
+                if candidate.exists():
+                    image_file = candidate
+                    break
+            images = [str(image_file)] if image_file else []
+
+            logo_file = None
+            for ext in (".png", ".jpg", ".jpeg"):
+                candidate = logo_path / f"{brand}{ext}"
+                if candidate.exists():
+                    logo_file = candidate
+                    break
+
+            product = Product(
+                id=pid,
+                brand=brand,
+                title=title,
+                price=price,
+                sizes=sizes,
+                images=images,
+                logo=str(logo_file) if logo_file else None,
+            )
+            self.products[product.id] = product
 
     # Cart management -----------------------------------------------------
     def add_to_cart(self, product_id: str) -> None:
