@@ -25,7 +25,7 @@ class BottomBar(MDCard):
     def __init__(self, on_select, **kwargs):
         super().__init__(
             size_hint_y=None,
-            height=dp(64),
+            height=dp(54),
             radius=[0],
             elevation=0,
             md_bg_color=(1, 1, 1, 1),
@@ -77,6 +77,11 @@ class PonsivApp(MDApp):
         root = MDBoxLayout(orientation="vertical")
 
         # ── TOP BAR estilo mock: transparente, título "PONSIV" y dos iconos a la derecha ──
+        root = MDBoxLayout(orientation="vertical")
+        top_container = MDBoxLayout(
+            size_hint=(1, None),
+            height=dp(50),  # Altura fija para el contenedor
+        )
         top = MDTopAppBar(
             title="PONSIV",
             md_bg_color=(1, 1, 1, 1),
@@ -85,13 +90,16 @@ class PonsivApp(MDApp):
                 ["heart-outline", lambda x: None],
                 ["account-outline", lambda x: self.switch_screen("profile")],
             ],
+            size_hint=(1, None),
+            height=dp(50),  # Igualar la altura al contenedor
+            pos_hint={"center_y": 0.5},  # Centra la topbar en el contenedor
         )
-        # Aseguramos texto/íconos en blanco para que se lean sobre la foto
         try:
             top.specific_text_color = (0, 0, 0, 1)
         except Exception:
             pass
-        root.add_widget(top)
+        top_container.add_widget(top)
+        root.add_widget(top_container)
 
         # ── Contenido principal ──
         self.sm = ScreenManager()
