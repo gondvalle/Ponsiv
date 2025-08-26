@@ -5,6 +5,7 @@ from kivymd.uix.button import MDFlatButton
 from kivymd.uix.fitimage import FitImage
 from kivymd.uix.dialog import MDDialog
 from kivy.uix.filechooser import FileChooserIconView
+import os
 
 from ..store import store
 
@@ -36,7 +37,11 @@ class ProfileScreen(MDScreen):
         self.add_widget(layout)
 
     def open_file_chooser(self, *_):
-        chooser = FileChooserIconView()
+        chooser = FileChooserIconView(
+            path=os.path.expanduser("~"),
+            filters=["*.png", "*.jpg", "*.jpeg"],
+            show_hidden=False,
+        )
         self.dialog = MDDialog(
             title="Select Avatar",
             type="custom",

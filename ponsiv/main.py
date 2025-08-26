@@ -15,6 +15,7 @@ from .screens.looks import LooksScreen
 from .screens.cart import CartScreen
 from .screens.profile import ProfileScreen
 from .screens.login import LoginScreen
+from .store import store
 
 Window.size = (360, 640)
 
@@ -125,6 +126,12 @@ class PonsivApp(MDApp):
         self.sm.add_widget(ProfileScreen(name="profile"))
         self.sm.add_widget(LoginScreen(name="login"))
         root.add_widget(self.sm)
+
+        # Set initial screen depending on authentication state
+        if store.current_user_id is None:
+            self.sm.current = "login"
+        else:
+            self.sm.current = "feed"
 
         # ── Bottom nav de iconos ──
         bottom = BottomBar(on_select=self.switch_screen)
