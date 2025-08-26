@@ -1,8 +1,17 @@
+from kivy.uix.carousel import Carousel
 from kivymd.uix.screen import MDScreen
-from kivymd.uix.label import MDLabel
+
+from ..components.product_slide import ProductSlide
+from ..store import store
 
 
 class FeedScreen(MDScreen):
+    """Screen displaying products in a vertical carousel."""
+
     def on_pre_enter(self, *args):
-        if not self.children:
-            self.add_widget(MDLabel(text="Feed", halign="center"))
+        if self.children:
+            return
+        carousel = Carousel(direction="bottom", loop=False)
+        for product in store.products.values():
+            carousel.add_widget(ProductSlide(product))
+        self.add_widget(carousel)
