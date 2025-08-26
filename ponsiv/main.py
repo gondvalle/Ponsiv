@@ -5,7 +5,6 @@ from kivymd.app import MDApp
 from kivymd.uix.boxlayout import MDBoxLayout
 from kivymd.uix.toolbar import MDTopAppBar
 from kivymd.uix.button import MDIconButton
-from kivymd.uix.label import MDLabel
 from kivymd.uix.card import MDCard
 
 from .screens.feed import FeedScreen
@@ -17,15 +16,19 @@ from .screens.login import LoginScreen
 
 Window.size = (360, 640)
 
+
 class BottomBar(MDCard):
-    """Barra inferior personalizada (icono + texto) que controla un ScreenManager externo."""
+    """
+    Bottom nav de sólo iconos, fondo blanco y sin etiquetas (estilo del mock).
+    Controla un ScreenManager externo.
+    """
     def __init__(self, on_select, **kwargs):
         super().__init__(
             size_hint_y=None,
             height=dp(64),
             radius=[0],
             elevation=0,
-            md_bg_color=(0, 0, 0, 1),
+            md_bg_color=(1, 1, 1, 1),
             **kwargs
         )
         self.on_select = on_select
@@ -33,38 +36,26 @@ class BottomBar(MDCard):
         row = MDBoxLayout(orientation="horizontal", padding=[dp(8), 0], spacing=dp(8))
         self.add_widget(row)
 
+        # Orden aproximado como en la captura (home, search/explore, t-shirt, cart, profile)
         items = [
-            ("feed",    "home",            "Feed"),
-            ("explore", "compass",         "Explore"),
-            ("looks",   "image-multiple",  "Looks"),
-            ("cart",    "cart",            "Cart"),
-            ("profile", "account",         "Profile"),
+            ("feed",    "home"),
+            ("explore", "magnify"),
+            ("looks",   "tshirt-crew"),
+            ("cart",    "shopping-outline"),
+            ("profile", "account-outline"),
         ]
 
-        # construimos cada item (icono arriba, texto abajo)
         self.buttons = {}
-        for name, icon, text in items:
-            col = MDBoxLayout(orientation="vertical", padding=[0, dp(6), 0, dp(6)])
+        for name, icon in items:
             btn = MDIconButton(
                 icon=icon,
                 theme_text_color="Custom",
-                text_color=(1, 1, 1, 1),
+                text_color=(0, 0, 0, 0.55),
                 icon_size="24sp",
                 on_release=lambda *_ , n=name: self.select(n),
             )
-            lbl = MDLabel(
-                text=text,
-                halign="center",
-                font_size="11sp",
-                theme_text_color="Custom",
-                text_color=(1, 1, 1, 0.7),
-                size_hint_y=None,
-                height=dp(16),
-            )
-            col.add_widget(btn)
-            col.add_widget(lbl)
-            row.add_widget(col)
-            self.buttons[name] = (btn, lbl)
+            row.add_widget(btn)
+            self.buttons[name] = btn
 
         self.highlight("feed")  # por defecto
 
@@ -73,24 +64,36 @@ class BottomBar(MDCard):
         self.highlight(name)
 
     def highlight(self, active: str):
-        # resalta el seleccionado
-        for name, (btn, lbl) in self.buttons.items():
-            alpha = 1.0 if name == active else 0.6
-            btn.text_color = (1, 1, 1, alpha)
-            lbl.text_color = (1, 1, 1, alpha)
+        for name, btn in self.buttons.items():
+            alpha = 1.0 if name == active else 0.55
+            btn.text_color = (0, 0, 0, alpha)
+
 
 class PonsivApp(MDApp):
     def build(self):
-        self.theme_cls.theme_style = "Dark"
+        # Tema oscuro general, pero cabecera transparente y bottom blanca
+        self.theme_cls.theme_style = "Light"
 
         root = MDBoxLayout(orientation="vertical")
 
-        # Top bar fija
-        top = MDTopAppBar(title="Ponsiv")
-        top.size_hint_y = None
+        # ── TOP BAR estilo mock: transparente, título "PONSIV" y dos iconos a la derecha ──
+        top = MDTopAppBar(
+            title="PONSIV",
+            md_bg_color=(1, 1, 1, 1),
+            elevation=0,
+            right_action_items=[
+                ["heart-outline", lambda x: None],
+                ["account-outline", lambda x: self.switch_screen("profile")],
+            ],
+        )
+        # Aseguramos texto/íconos en blanco para que se lean sobre la foto
+        try:
+            top.specific_text_color = (0, 0, 0, 1)
+        except Exception:
+            pass
         root.add_widget(top)
 
-        # ScreenManager ocupa TODO el espacio disponible
+        # ── Contenido principal ──
         self.sm = ScreenManager()
         self.sm.size_hint_y = 1
         self.sm.add_widget(FeedScreen(name="feed"))
@@ -101,7 +104,7 @@ class PonsivApp(MDApp):
         self.sm.add_widget(LoginScreen(name="login"))
         root.add_widget(self.sm)
 
-        # Bottom bar personalizada (sin ScreenManager interno)
+        # ── Bottom nav de iconos ──
         bottom = BottomBar(on_select=self.switch_screen)
         root.add_widget(bottom)
 
@@ -109,6 +112,7 @@ class PonsivApp(MDApp):
 
     def switch_screen(self, name: str) -> None:
         self.sm.current = name
+
 
 if __name__ == "__main__":
     PonsivApp().run()
