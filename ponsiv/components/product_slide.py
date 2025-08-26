@@ -11,26 +11,29 @@ from kivymd.uix.label import MDLabel
 
 class ProductSlide(FloatLayout):
     """Slide showing a single product with image and overlaid info."""
-
     product = ObjectProperty()
 
     def __init__(self, product, **kwargs):
         super().__init__(**kwargs)
         self.product = product
 
+        # ── IMAGEN A PANTALLA COMPLETA DEL SLIDE ────────────────────────────────
         self.img_card = MDCard(
-            size_hint=(0.97, None),
-            pos_hint={"center_x": 0.5, "y": 0.01},
-            radius=[dp(20)],
+            size_hint=(1, 1),             # ocupa todo el espacio del slide
+            pos_hint={"x": 0, "y": 0},    # sin offset vertical
+            radius=[dp(20)],              # si no quieres esquinas, pon [0]
             elevation=0,
         )
         if product.images:
-            self.img_card.add_widget(FitImage(source=product.images[0]))
+            self.img_card.add_widget(
+                FitImage(source=product.images[0], size_hint=(1, 1))
+            )
         self.add_widget(self.img_card)
 
-        # ensure the image card adapts to the available space of the screen
-        self.bind(size=self._update_layout)
+        # Recalcular sólo overlays cuando cambie tamaño/posición
+        self.bind(size=self._update_layout, pos=self._update_layout)
 
+        # ── TARJETA DE INFORMACIÓN (superpuesta) ───────────────────────────────
         info_card = MDCard(
             size_hint=(0.9, None),
             height=dp(120),
@@ -111,16 +114,16 @@ class ProductSlide(FloatLayout):
         info_card.add_widget(fl)
         self.add_widget(info_card)
 
+        # ── OVERLAY LATERAL (rectángulo semitransparente + iconos) ─────────────
         pw, ph = 0.18, 0.36
         px, py = 1 - pw - 0.07, 0.5 - ph / 2
+        self._pw, self._ph, self._px, self._py = pw, ph, px, py
+
         with self.canvas.before:
             Color(0, 0, 0, 0.4)
-            self._rect = RoundedRectangle(radius=[dp(30)])
+            self._rect = RoundedRectangle(radius=[dp(30)])  # pos/size en _update_layout
 
-        # update rectangle and image sizes when layout changes
-        self._pw, self._ph, self._px, self._py = pw, ph, px, py
-        icons = ["heart-outline", "bookmark-outline", "share", "tshirt-crew"]
-        for i, ic in enumerate(icons):
+        for i, ic in enumerate(["heart-outline", "bookmark-outline", "share", "tshirt-crew"]):
             btn = MDIconButton(
                 icon=ic,
                 icon_size="20sp",
@@ -133,8 +136,6 @@ class ProductSlide(FloatLayout):
             self.add_widget(btn)
 
     def _update_layout(self, *args):
-        """Resize image card and overlay rectangle to fit current screen."""
-        available_height = self.height - dp(15)
-        self.img_card.height = available_height
+        """Update only the overlay rectangle to follow the slide size."""
         self._rect.pos = (self.width * self._px, self.height * self._py)
         self._rect.size = (self.width * self._pw, self.height * self._ph)
