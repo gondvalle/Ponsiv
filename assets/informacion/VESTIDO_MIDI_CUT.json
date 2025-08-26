@@ -1,0 +1,11 @@
+{
+    "nombre": "Vestido midi cut",
+    "marca": "Zara",
+    "precio": 59.9,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

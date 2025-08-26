@@ -1,0 +1,10 @@
+{
+    "nombre": "Camisa volantes",
+    "marca": "Zara",
+    "precio": 45.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M"
+    ]
+}

@@ -1,0 +1,10 @@
+{
+    "nombre": "Sobrecamisa safari",
+    "marca": "Zara",
+    "precio": 65.5,
+    "tallas": [
+        "M",
+        "L",
+        "XL"
+    ]
+}

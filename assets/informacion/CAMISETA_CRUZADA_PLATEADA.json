@@ -1,0 +1,11 @@
+{
+    "nombre": "Camiseta cruzada plateada",
+    "marca": "Nicoli",
+    "precio": 27.5,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

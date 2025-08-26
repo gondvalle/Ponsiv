@@ -1,0 +1,10 @@
+{
+    "nombre": "Chaqueta manga remangada",
+    "marca": "Zara",
+    "precio": 79.95,
+    "tallas": [
+        "S",
+        "M",
+        "L"
+    ]
+}

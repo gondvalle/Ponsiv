@@ -1,0 +1,11 @@
+{
+    "nombre": "Pantalón textura dorado",
+    "marca": "Nicoli",
+    "precio": 65.75,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

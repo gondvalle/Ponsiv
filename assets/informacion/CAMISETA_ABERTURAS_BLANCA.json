@@ -1,0 +1,11 @@
+{
+    "nombre": "Camiseta aberturas blanca",
+    "marca": "Nicoli",
+    "precio": 24.95,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

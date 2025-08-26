@@ -1,0 +1,11 @@
+{
+    "nombre": "Chaqueta denim lentejuelas",
+    "marca": "Nicoli",
+    "precio": 89.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

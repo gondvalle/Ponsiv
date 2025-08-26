@@ -1,0 +1,11 @@
+{
+    "nombre": "Vestido gomas volante naranja",
+    "marca": "Nicoli",
+    "precio": 45.75,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

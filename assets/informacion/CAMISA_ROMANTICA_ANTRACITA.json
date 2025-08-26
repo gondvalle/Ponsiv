@@ -1,0 +1,11 @@
+{
+    "nombre": "Camisa romántica antracita",
+    "marca": "Nicoli",
+    "precio": 34.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

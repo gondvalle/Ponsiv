@@ -1,0 +1,11 @@
+{
+    "nombre": "Top gomas lila",
+    "marca": "Nicoli",
+    "precio": 19.95,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

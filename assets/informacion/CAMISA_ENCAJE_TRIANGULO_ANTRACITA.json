@@ -1,0 +1,11 @@
+{
+    "nombre": "Camisa encaje triángulo antracita",
+    "marca": "Nicoli",
+    "precio": 39.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

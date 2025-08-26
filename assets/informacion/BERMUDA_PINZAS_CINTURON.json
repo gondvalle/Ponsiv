@@ -1,0 +1,12 @@
+{
+    "nombre": "Bermuda pinzas cinturón",
+    "marca": "Zara",
+    "precio": 39.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+    ]
+}

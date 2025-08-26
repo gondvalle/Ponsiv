@@ -1,0 +1,11 @@
+{
+    "nombre": "Camisa manga ancha",
+    "marca": "Zara",
+    "precio": 35.5,
+    "tallas": [
+        "S",
+        "M",
+        "L",
+        "XL"
+    ]
+}

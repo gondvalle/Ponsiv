@@ -1,0 +1,11 @@
+{
+    "nombre": "Camiseta tira espalda mora",
+    "marca": "Nicoli",
+    "precio": 22.9,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

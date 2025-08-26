@@ -1,0 +1,11 @@
+{
+    "nombre": "Camisa romántica blanca",
+    "marca": "Nicoli",
+    "precio": 32.5,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

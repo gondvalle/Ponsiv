@@ -1,0 +1,12 @@
+{
+    "nombre": "Chaqueta safari con lino",
+    "marca": "Zara",
+    "precio": 89.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL"
+    ]
+}

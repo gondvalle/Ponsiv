@@ -1,0 +1,10 @@
+{
+    "nombre": "Top chaleco punto liso",
+    "marca": "Zara",
+    "precio": 25.99,
+    "tallas": [
+        "XS",
+        "S",
+        "M"
+    ]
+}

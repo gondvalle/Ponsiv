@@ -1,0 +1,11 @@
+{
+    "nombre": "Top punto manga corta",
+    "marca": "Zara",
+    "precio": 22.95,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}

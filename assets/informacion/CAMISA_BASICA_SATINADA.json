@@ -1,0 +1,11 @@
+{
+    "nombre": "Camisa básica satinada",
+    "marca": "Zara",
+    "precio": 29.95,
+    "tallas": [
+        "XS",
+        "S",
+        "M",
+        "L"
+    ]
+}
