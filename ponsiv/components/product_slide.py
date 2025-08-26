@@ -1,4 +1,3 @@
-from kivy.core.window import Window
 from kivy.graphics import Color, Ellipse, RoundedRectangle
 from kivy.metrics import dp
 from kivy.properties import ObjectProperty
@@ -19,18 +18,18 @@ class ProductSlide(FloatLayout):
         super().__init__(**kwargs)
         self.product = product
 
-        available_height = Window.height - dp(15)
-
-        img_card = MDCard(
+        self.img_card = MDCard(
             size_hint=(0.97, None),
-            height=available_height,
             pos_hint={"center_x": 0.5, "y": 0.01},
             radius=[dp(20)],
             elevation=0,
         )
         if product.images:
-            img_card.add_widget(FitImage(source=product.images[0]))
-        self.add_widget(img_card)
+            self.img_card.add_widget(FitImage(source=product.images[0]))
+        self.add_widget(self.img_card)
+
+        # ensure the image card adapts to the available space of the screen
+        self.bind(size=self._update_layout)
 
         info_card = MDCard(
             size_hint=(0.9, None),
@@ -116,11 +115,10 @@ class ProductSlide(FloatLayout):
         px, py = 1 - pw - 0.07, 0.5 - ph / 2
         with self.canvas.before:
             Color(0, 0, 0, 0.4)
-            RoundedRectangle(
-                pos=(Window.width * px, Window.height * py),
-                size=(Window.width * pw, Window.height * ph),
-                radius=[dp(30)],
-            )
+            self._rect = RoundedRectangle(radius=[dp(30)])
+
+        # update rectangle and image sizes when layout changes
+        self._pw, self._ph, self._px, self._py = pw, ph, px, py
         icons = ["heart-outline", "bookmark-outline", "share", "tshirt-crew"]
         for i, ic in enumerate(icons):
             btn = MDIconButton(
@@ -133,3 +131,10 @@ class ProductSlide(FloatLayout):
                 pos_hint={"x": px + (pw - 0.05) / 2, "y": py + ph - 0.15 - i * 0.06},
             )
             self.add_widget(btn)
+
+    def _update_layout(self, *args):
+        """Resize image card and overlay rectangle to fit current screen."""
+        available_height = self.height - dp(15)
+        self.img_card.height = available_height
+        self._rect.pos = (self.width * self._px, self.height * self._py)
+        self._rect.size = (self.width * self._pw, self.height * self._ph)
