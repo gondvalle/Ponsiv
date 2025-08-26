@@ -15,16 +15,13 @@ from .screens.looks import LooksScreen
 from .screens.cart import CartScreen
 from .screens.profile import ProfileScreen
 from .screens.login import LoginScreen
+from .screens.detail import ProductDetailScreen
 from .store import store
 
 Window.size = (360, 640)
 
 
 class BottomBar(MDCard):
-    """
-    Bottom nav de sólo iconos, fondo blanco y sin etiquetas (estilo del mock).
-    Controla un ScreenManager externo.
-    """
     def __init__(self, on_select, **kwargs):
         super().__init__(
             size_hint_y=None,
@@ -39,7 +36,6 @@ class BottomBar(MDCard):
         row = MDBoxLayout(orientation="horizontal", padding=[dp(8), 0], spacing=dp(8))
         self.add_widget(row)
 
-        # Orden aproximado como en la captura (home, search/explore, t-shirt, cart, profile)
         items = [
             ("feed",    "home"),
             ("explore", "magnify"),
@@ -60,7 +56,7 @@ class BottomBar(MDCard):
             row.add_widget(btn)
             self.buttons[name] = btn
 
-        self.highlight("feed")  # por defecto
+        self.highlight("feed")
 
     def select(self, name: str):
         self.on_select(name)
@@ -74,19 +70,18 @@ class BottomBar(MDCard):
 
 class PonsivApp(MDApp):
     def build(self):
-        # Tema oscuro general, pero cabecera transparente y bottom blanca
         self.theme_cls.theme_style = "Light"
 
         root = MDBoxLayout(orientation="vertical")
 
-        # ── Contenedor relativo para superponer topbar + logo centrado ──
-        top_container = MDRelativeLayout(size_hint=(1, None), height=dp(56))
+        # ── Top bar + logo (guardamos referencia) ───────────────────────────────
+        self.top_container = MDRelativeLayout(size_hint=(1, None), height=dp(56))
 
         top = MDTopAppBar(
             title="",
             md_bg_color=(1, 1, 1, 1),
             elevation=0,
-            left_action_items=[],  # sin icono a la izquierda
+            left_action_items=[],
             right_action_items=[
                 ["heart-outline", lambda x: None],
                 ["account-outline", lambda x: self.switch_screen("profile")],
@@ -94,29 +89,24 @@ class PonsivApp(MDApp):
             size_hint=(1, None),
             height=dp(56),
         )
-        # Color de iconos/texto (negro)
         try:
             top.specific_text_color = (0, 0, 0, 1)
         except Exception:
             pass
 
-        # Logo centrado y alineado verticalmente con los iconos
         logo = FitImage(
             source="assets/logos/Ponsiv.png",
             size_hint=(None, None),
-            # altura ~ 28-32 dp funciona bien con toolbar de 56 dp
             height=dp(28),
-            width=dp(100),   # ajusta si necesitas otra proporción
+            width=dp(100),
             pos_hint={"center_x": 0.2, "center_y": 0.5},
         )
 
-        # Añadimos ambos al contenedor relativo (el orden importa: primero la barra)
-        top_container.add_widget(top)
-        top_container.add_widget(logo)
+        self.top_container.add_widget(top)
+        self.top_container.add_widget(logo)
+        root.add_widget(self.top_container)
 
-        root.add_widget(top_container)
-
-        # ── Contenido principal ──
+        # ── Screens ─────────────────────────────────────────────────────────────
         self.sm = ScreenManager()
         self.sm.size_hint_y = 1
         self.sm.add_widget(FeedScreen(name="feed"))
@@ -125,22 +115,43 @@ class PonsivApp(MDApp):
         self.sm.add_widget(CartScreen(name="cart"))
         self.sm.add_widget(ProfileScreen(name="profile"))
         self.sm.add_widget(LoginScreen(name="login"))
+        self.sm.add_widget(ProductDetailScreen(name="detail"))
         root.add_widget(self.sm)
 
-        # Set initial screen depending on authentication state
+        # Pantalla inicial
         if store.current_user_id is None:
             self.sm.current = "login"
         else:
             self.sm.current = "feed"
 
-        # ── Bottom nav de iconos ──
-        bottom = BottomBar(on_select=self.switch_screen)
-        root.add_widget(bottom)
+        # ── Bottom nav (guardamos referencia) ───────────────────────────────────
+        self.bottom_bar = BottomBar(on_select=self.switch_screen)
+        root.add_widget(self.bottom_bar)
+
+        # ── Ocultar/mostrar chrome según pantalla ───────────────────────────────
+        self.sm.bind(current=lambda *_: self.update_chrome())
+        self.update_chrome()
 
         return root
 
     def switch_screen(self, name: str) -> None:
         self.sm.current = name
+        # update_chrome se dispara también por el bind, pero lo llamamos por si acaso
+        self.update_chrome()
+
+    def update_chrome(self):
+        """Oculta top/bottom bar en login; las muestra en el resto."""
+        on_login = (self.sm.current == "login")
+
+        # Top bar
+        self.top_container.disabled = on_login
+        self.top_container.opacity = 0 if on_login else 1
+        self.top_container.height = 0 if on_login else dp(56)
+
+        # Bottom bar
+        self.bottom_bar.disabled = on_login
+        self.bottom_bar.opacity = 0 if on_login else 1
+        self.bottom_bar.height = 0 if on_login else dp(54)
 
 
 if __name__ == "__main__":

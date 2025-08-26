@@ -51,16 +51,38 @@ class PonsivStore:
                 )
                 """
             )
+        # Migración suave: añadir columnas si faltan
+        self._ensure_user_column("age", "INTEGER")
+        self._ensure_user_column("city", "TEXT")
+        self._ensure_user_column("sex", "TEXT")
+
+    def _ensure_user_column(self, col: str, sql_type: str) -> None:
+        cur = self.conn.execute("PRAGMA table_info(users)")
+        existing = {row["name"] for row in cur.fetchall()}
+        if col not in existing:
+            with self.conn:
+                self.conn.execute(f"ALTER TABLE users ADD COLUMN {col} {sql_type}")
 
     # User management -------------------------------------------------------
-    def create_user(self, email: str, password: str) -> int:
+    def create_user(
+        self,
+        email: str,
+        password: str,
+        *,
+        age: Optional[int] = None,
+        city: Optional[str] = None,
+        sex: Optional[str] = None,
+    ) -> int:
         password_hash = hashlib.sha256(password.encode()).hexdigest()
         name = email.split("@")[0]
         handle = name
         with self.conn:
             cur = self.conn.execute(
-                "INSERT INTO users (email, password_hash, name, handle) VALUES (?, ?, ?, ?)",
-                (email, password_hash, name, handle),
+                """
+                INSERT INTO users (email, password_hash, name, handle, age, city, sex)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (email, password_hash, name, handle, age, city, sex),
             )
         return cur.lastrowid
 
@@ -81,7 +103,11 @@ class PonsivStore:
 
     def get_user(self, user_id: int) -> Optional[User]:
         cur = self.conn.execute(
-            "SELECT id, email, password_hash, name, handle, avatar_path FROM users WHERE id=?",
+            """
+            SELECT id, email, password_hash, name, handle, avatar_path,
+                   age, city, sex
+            FROM users WHERE id=?
+            """,
             (user_id,),
         )
         row = cur.fetchone()

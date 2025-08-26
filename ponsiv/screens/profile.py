@@ -1,59 +1,142 @@
+# ponsiv/screens/profile.py
+from kivy.metrics import dp
+from kivy.uix.scrollview import ScrollView
+from kivy.uix.gridlayout import GridLayout
+
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.label import MDLabel, MDIcon
-from kivymd.uix.button import MDFlatButton
+from kivymd.uix.card import MDCard
+from kivymd.uix.label import MDLabel
 from kivymd.uix.fitimage import FitImage
-from kivymd.uix.dialog import MDDialog
-from kivy.uix.filechooser import FileChooserIconView
-import os
+from kivymd.uix.button import MDIconButton
 
 from ..store import store
 
 
 class ProfileScreen(MDScreen):
-    dialog = None
+    """Perfil estilo iOS con grid de 'likes' y detalle on tap."""
 
     def on_pre_enter(self, *args):
         self.clear_widgets()
-        layout = MDBoxLayout(orientation="vertical", padding=20, spacing=20)
+
         user = store.get_user(store.current_user_id) if store.current_user_id else None
+        likes = store.get_liked_product_ids(store.current_user_id) if store.current_user_id else []
+        outfits_count = len(likes)
 
+        root = MDBoxLayout(orientation="vertical", padding=(dp(16), dp(8)), spacing=dp(8))
+
+        # ── Encabezado: avatar + nombre/handle ──────────────────────────────────
+        header = MDBoxLayout(orientation="vertical", spacing=dp(6), size_hint=(1, None))
+        header.height = dp(160)
+
+        # Avatar circular
+        avatar_wrap = MDCard(size_hint=(None, None), size=(dp(76), dp(76)), radius=[dp(38)],
+                             elevation=0, md_bg_color=(1, 1, 1, 1))
         if user and user.avatar_path:
-            self.avatar_widget = FitImage(source=user.avatar_path, size_hint=(None, None), size=(150, 150))
+            avatar_wrap.add_widget(FitImage(source=user.avatar_path))
         else:
-            self.avatar_widget = MDIcon(icon="account-circle", halign="center", font_size="64sp")
-        layout.add_widget(self.avatar_widget)
-        layout.add_widget(MDFlatButton(text="Change Photo", on_release=self.open_file_chooser))
+            # Placeholder usando el logo si no hay avatar
+            avatar_wrap.add_widget(FitImage(source="assets/logos/Ponsiv.png"))
 
-        name = user.name if user else "Guest"
-        layout.add_widget(MDLabel(text=f"{name}", halign="center"))
+        avatar_row = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(80))
+        avatar_row.add_widget(MDBoxLayout(size_hint_x=None, width=dp(8)))
+        avatar_row.add_widget(avatar_wrap)
+        root.add_widget(avatar_row)
 
-        liked_ids = store.get_liked_product_ids(store.current_user_id) if store.current_user_id else []
-        for pid in liked_ids:
+        # Nombre + handle
+        name = user.name if (user and user.name) else "Usuario"
+        handle = f"@{(user.handle if user and user.handle else 'ponsiver')}"
+        header.add_widget(MDLabel(text=name, halign="center", font_size="18sp",
+                                  theme_text_color="Custom", text_color=(0, 0, 0, 1)))
+        header.add_widget(MDLabel(text=handle, halign="center", font_size="13sp",
+                                  theme_text_color="Custom", text_color=(0, 0, 0, 0.6)))
+
+        # Métricas (mock simples: Following, Followers, Outfits = likes)
+        metrics = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(40), spacing=dp(16),
+                              padding=(dp(16), 0))
+        metrics.add_widget(self._metric_column(outfits_count if outfits_count else 0, "Outfits"))
+        metrics.add_widget(self._metric_column(0, "Siguiendo"))
+        metrics.add_widget(self._metric_column(0, "Seguidores"))
+        header.add_widget(metrics)
+
+        root.add_widget(header)
+
+        # ── Tabs de sección (solo ❤️ activo de momento) ─────────────────────────
+        tabs = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(40),
+                           padding=(dp(8), 0), spacing=dp(6))
+        # Íconos: camiseta, corazón, archivos, bolsa (mismo orden del mock)
+        for icon, active in (("tshirt-crew", False), ("heart", True), ("file-document-outline", False), ("shopping-outline", False)):
+            btn = MDIconButton(icon=icon, theme_text_color="Custom",
+                               text_color=(0, 0, 0, 1 if active else 0.45),
+                               icon_size="22sp")
+            tabs.add_widget(btn)
+        root.add_widget(tabs)
+
+        # ── Grid de likes (2 columnas) dentro de ScrollView ─────────────────────
+        scroll = ScrollView(size_hint=(1, 1))
+        grid = GridLayout(cols=2, padding=[dp(8), dp(8)], spacing=dp(8),
+                          size_hint_y=None)
+        grid.bind(minimum_height=grid.setter("height"))
+
+        for pid in likes:
             product = store.products.get(pid)
-            if product:
-                layout.add_widget(MDLabel(text=product.title, halign="center"))
+            if not product:
+                continue
+            grid.add_widget(self._product_card(product))
 
-        self.add_widget(layout)
+        # Si no hay likes, mensaje amable
+        if not likes:
+            grid.add_widget(MDLabel(text="Aún no has dado ❤️ a ninguna prenda.",
+                                    size_hint_y=None, height=dp(40),
+                                    theme_text_color="Custom", text_color=(0, 0, 0, 0.6)))
 
-    def open_file_chooser(self, *_):
-        chooser = FileChooserIconView(
-            path=os.path.expanduser("~"),
-            filters=["*.png", "*.jpg", "*.jpeg"],
-            show_hidden=False,
-        )
-        self.dialog = MDDialog(
-            title="Select Avatar",
-            type="custom",
-            content_cls=chooser,
-            buttons=[MDFlatButton(text="Close", on_release=lambda *x: self.dialog.dismiss())],
-        )
-        chooser.bind(on_selection=self._file_selected)
-        self.dialog.open()
+        scroll.add_widget(grid)
+        root.add_widget(scroll)
 
-    def _file_selected(self, chooser, selection):
-        if selection:
-            path = selection[0]
-            store.update_user_avatar(store.current_user_id, path)
-            self.dialog.dismiss()
-            self.on_pre_enter()
+        self.add_widget(root)
+
+    # ───────────────────────── Helpers UI ───────────────────────────────────────
+    def _metric_column(self, number: int, label: str) -> MDBoxLayout:
+        col = MDBoxLayout(orientation="vertical")
+        col.add_widget(MDLabel(text=str(number), halign="center", font_size="15sp",
+                               bold=True, theme_text_color="Custom", text_color=(0, 0, 0, 1)))
+        col.add_widget(MDLabel(text=label, halign="center", font_size="12sp",
+                               theme_text_color="Custom", text_color=(0, 0, 0, 0.6)))
+        return col
+
+    def _product_card(self, product) -> MDCard:
+        """
+        Tarjeta clickable: imagen arriba + franja inferior con marca y precio.
+        Al tocar, abre detalle a pantalla completa con ProductSlide.
+        """
+        card = MDCard(size_hint=(1, None), height=dp(220), radius=[dp(14)], elevation=0, md_bg_color=(1, 1, 1, 1))
+
+        box = MDBoxLayout(orientation="vertical")
+        # Imagen
+        if product.images:
+            box.add_widget(FitImage(source=product.images[0], size_hint=(1, 1)))
+        else:
+            box.add_widget(MDLabel(text="Sin imagen", halign="center"))
+
+        # Franja inferior
+        info = MDBoxLayout(orientation="vertical", size_hint=(1, None), height=dp(52), padding=(dp(10), dp(6)))
+        info.add_widget(MDLabel(text=product.brand or "", font_size="12sp",
+                                theme_text_color="Custom", text_color=(0, 0, 0, 0.8)))
+        info.add_widget(MDLabel(text=f"{product.price:.2f} €", font_size="13sp", bold=True,
+                                theme_text_color="Custom", text_color=(0, 0, 0, 1)))
+        box.add_widget(info)
+
+        card.add_widget(box)
+
+        # Captura del toque
+        card.bind(on_touch_up=lambda inst, touch, pid=product.id:
+                  self._open_detail_if_hit(inst, touch, pid))
+        return card
+
+    def _open_detail_if_hit(self, widget, touch, product_id: str):
+        if widget.collide_point(*touch.pos):
+            detail = self.manager.get_screen("detail")
+            detail.show_product(product_id)
+            self.manager.current = "detail"
+            return True
+        return False

@@ -31,13 +31,15 @@ class Look:
 @dataclass
 class User:
     """Basic user profile stored in the local SQLite database."""
-
     id: int
     email: str
     password_hash: str
     name: str
     handle: str
     avatar_path: Optional[str] = None
+    age: Optional[int] = None
+    city: Optional[str] = None
+    sex: Optional[str] = None  # 'Mujer' | 'Hombre' | 'Otro'
 
 
 @dataclass
