@@ -1,29 +1,134 @@
 import json
+import sqlite3
+import hashlib
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 from datetime import date
 
 from .models import Product, Look, LookAuthor, User, Order
 
 
 class PonsivStore:
-    """In memory store for Ponsiv data and user cart/orders."""
+    """Store backed by SQLite for user accounts and likes."""
 
     def __init__(self) -> None:
+        # In-memory collections for products and orders
         self.products: Dict[str, Product] = {}
         self.looks: Dict[str, Look] = {}
-        self.users: Dict[str, User] = {}
         self.orders: List[Order] = []
         self.cart: List[str] = []
 
-    def load_seed(self) -> None:
-        """Load product data from the ``assets`` directory.
+        # Database setup
+        self.db_path = Path(__file__).resolve().parent / "users.db"
+        self.conn = sqlite3.connect(self.db_path)
+        self.conn.row_factory = sqlite3.Row
+        self._create_tables()
 
-        Each product has a JSON description in ``assets/informacion`` and an
-        image with the same file name in ``assets/prendas``. Brand logos are
-        located in ``assets/logos``. New products can be added simply by
-        placing the corresponding JSON and image files in these folders.
-        """
+        # Logged in user id (None means not authenticated)
+        self.current_user_id: Optional[int] = None
+
+    # ------------------------------------------------------------------ DB --
+    def _create_tables(self) -> None:
+        with self.conn:
+            self.conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    name TEXT,
+                    handle TEXT,
+                    avatar_path TEXT
+                )
+                """
+            )
+            self.conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS likes (
+                    user_id INTEGER NOT NULL,
+                    product_id TEXT NOT NULL,
+                    UNIQUE(user_id, product_id)
+                )
+                """
+            )
+
+    # User management -------------------------------------------------------
+    def create_user(self, email: str, password: str) -> int:
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        name = email.split("@")[0]
+        handle = name
+        with self.conn:
+            cur = self.conn.execute(
+                "INSERT INTO users (email, password_hash, name, handle) VALUES (?, ?, ?, ?)",
+                (email, password_hash, name, handle),
+            )
+        return cur.lastrowid
+
+    def authenticate_user(self, email: str, password: str) -> Optional[int]:
+        cur = self.conn.execute("SELECT id, password_hash FROM users WHERE email=?", (email,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        if row["password_hash"] == password_hash:
+            return row["id"]
+        return None
+
+    def get_user_by_email(self, email: str) -> Optional[int]:
+        cur = self.conn.execute("SELECT id FROM users WHERE email=?", (email,))
+        row = cur.fetchone()
+        return row["id"] if row else None
+
+    def get_user(self, user_id: int) -> Optional[User]:
+        cur = self.conn.execute(
+            "SELECT id, email, password_hash, name, handle, avatar_path FROM users WHERE id=?",
+            (user_id,),
+        )
+        row = cur.fetchone()
+        if row:
+            return User(**row)
+        return None
+
+    def update_user_avatar(self, user_id: int, avatar_path: str) -> None:
+        with self.conn:
+            self.conn.execute(
+                "UPDATE users SET avatar_path=? WHERE id=?", (avatar_path, user_id)
+            )
+
+    # Likes management ------------------------------------------------------
+    def is_product_liked(self, user_id: int, product_id: str) -> bool:
+        cur = self.conn.execute(
+            "SELECT 1 FROM likes WHERE user_id=? AND product_id=?",
+            (user_id, product_id),
+        )
+        return cur.fetchone() is not None
+
+    def toggle_like(self, user_id: int, product_id: str) -> bool:
+        if self.is_product_liked(user_id, product_id):
+            with self.conn:
+                self.conn.execute(
+                    "DELETE FROM likes WHERE user_id=? AND product_id=?",
+                    (user_id, product_id),
+                )
+            return False
+        else:
+            with self.conn:
+                self.conn.execute(
+                    "INSERT OR IGNORE INTO likes (user_id, product_id) VALUES (?, ?)",
+                    (user_id, product_id),
+                )
+            return True
+
+    def get_liked_product_ids(self, user_id: int) -> List[str]:
+        cur = self.conn.execute(
+            "SELECT product_id FROM likes WHERE user_id=?",
+            (user_id,),
+        )
+        return [row["product_id"] for row in cur.fetchall()]
+
+    # ----------------------------------------------------------------- Seed --
+    def load_seed(self) -> None:
+        """Load product data from the ``assets`` directory."""
         base_path = Path(__file__).resolve().parent.parent / "assets"
         info_path = base_path / "informacion"
         image_path = base_path / "prendas"

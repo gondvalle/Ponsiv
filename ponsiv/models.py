@@ -30,16 +30,14 @@ class Look:
 
 @dataclass
 class User:
-    id: str
+    """Basic user profile stored in the local SQLite database."""
+
+    id: int
+    email: str
+    password_hash: str
     name: str
     handle: str
-    avatar: str
-    following: int
-    followers: int
-    outfitsCount: int
-    wardrobe: List[str]
-    likes: List[str]
-    orders: List[str]
+    avatar_path: Optional[str] = None
 
 
 @dataclass

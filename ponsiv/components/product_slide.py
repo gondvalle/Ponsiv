@@ -6,6 +6,8 @@ from kivymd.uix.fitimage import FitImage
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.label import MDLabel
 
+from ..store import store
+
 
 class ProductSlide(FloatLayout):
     """
@@ -88,11 +90,23 @@ class ProductSlide(FloatLayout):
 
         # ── Columna de iconos flotantes (derecha) estilo "chips" blancos ────────
         # Orden como en la imagen: corazón, paper-plane (share), comment, t-shirt
-        icons = ["heart-outline", "send-outline", "comment-outline", "tshirt-crew"]
         base_y = 0.60
         step = 0.10
-        for i, ic in enumerate(icons):
-            self.add_widget(self._round_icon(ic, pos_hint={"center_x": 0.93, "center_y": base_y - i * step}))
+
+        # Heart button with like toggle
+        self.heart_btn = self._round_icon("heart-outline", pos_hint={"center_x": 0.93, "center_y": base_y})
+        self.heart_btn.bind(on_release=self.toggle_like)
+        if store.current_user_id and store.is_product_liked(store.current_user_id, self.product.id):
+            self.heart_btn.icon = "heart"
+        self.add_widget(self.heart_btn)
+
+        icons = ["send-outline", "comment-outline", "tshirt-crew"]
+        for i, ic in enumerate(icons, start=1):
+            self.add_widget(
+                self._round_icon(
+                    ic, pos_hint={"center_x": 0.93, "center_y": base_y - i * step}
+                )
+            )
 
     def _round_icon(self, icon_name: str, pos_hint: dict) -> MDIconButton:
         """
@@ -111,3 +125,9 @@ class ProductSlide(FloatLayout):
         btn.size = (dp(40), dp(40))
         btn.radius = [dp(20)]
         return btn
+
+    def toggle_like(self, *_):
+        if not store.current_user_id:
+            return
+        liked = store.toggle_like(store.current_user_id, self.product.id)
+        self.heart_btn.icon = "heart" if liked else "heart-outline"
