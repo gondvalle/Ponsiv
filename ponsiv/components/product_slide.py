@@ -6,7 +6,7 @@ from kivy.uix.floatlayout import FloatLayout
 from kivy.uix.image import Image
 from kivymd.uix.card import MDCard
 from kivymd.uix.fitimage import FitImage
-from kivymd.uix.iconbutton import MDIconButton
+from kivymd.uix.button import MDIconButton
 from kivymd.uix.label import MDLabel
 
 
