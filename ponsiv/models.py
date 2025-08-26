@@ -8,12 +8,9 @@ class Product:
     brand: str
     title: str
     price: float
-    images: List[str]
     sizes: List[str]
-    color: str
-    category: str
-    stock: int
-    checkout_url: Optional[str] = None
+    images: List[str]
+    logo: Optional[str] = None
 
 
 @dataclass
