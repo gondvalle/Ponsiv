@@ -243,9 +243,9 @@ class LoginScreen(MDScreen):
         if not email or not password:
             self.message.text = "Email y contraseña son obligatorios."
             return
-        if len(password) < 6:
-            self.message.text = "La contraseña debe tener 6+ caracteres."
-            return
+        # if len(password) < 6:
+        #     self.message.text = "La contraseña debe tener 6+ caracteres."
+        #     return
 
         # Unicidad básica
         if store.get_user_by_email(email) is not None:
