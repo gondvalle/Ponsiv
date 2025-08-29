@@ -5,8 +5,30 @@ from kivymd.uix.card import MDCard
 from kivymd.uix.fitimage import FitImage
 from kivymd.uix.button import MDIconButton
 from kivymd.uix.label import MDLabel
+from ponsiv.components.image_icon import ImageToggleButton, icon_path
 
 from ..store import store
+
+
+def _round_image_chip(src_normal: str, src_selected: str | None = None,
+                      pos_hint=None, selected=False, on_release=None) -> MDCard:
+    """
+    Crea el 'chip' blanco circular con tu imagen dentro.
+    """
+    wrap = MDCard(size_hint=(None, None), size=(dp(40), dp(40)),
+                  radius=[dp(20)], elevation=0, md_bg_color=(1, 1, 1, 1),
+                  pos_hint=pos_hint or {})
+    btn = ImageToggleButton(
+        normal_source=src_normal,
+        selected_source=src_selected or src_normal,
+        selected=selected,
+        size_hint=(1, 1),
+    )
+    if on_release:
+        btn.bind(on_release=on_release)
+    wrap.add_widget(btn)
+    wrap._img_btn = btn
+    return wrap
 
 
 class ProductSlide(FloatLayout):
@@ -93,20 +115,47 @@ class ProductSlide(FloatLayout):
         base_y = 0.60
         step = 0.10
 
-        # Heart button with like toggle
-        self.heart_btn = self._round_icon("heart-outline", pos_hint={"center_x": 0.93, "center_y": base_y})
-        self.heart_btn.bind(on_release=self.toggle_like)
-        if store.current_user_id and store.is_product_liked(store.current_user_id, self.product.id):
-            self.heart_btn.icon = "heart"
-        self.add_widget(self.heart_btn)
-
-        icons = ["send-outline", "comment-outline", "tshirt-crew"]
-        for i, ic in enumerate(icons, start=1):
-            self.add_widget(
-                self._round_icon(
-                    ic, pos_hint={"center_x": 0.93, "center_y": base_y - i * step}
-                )
+        heart_normal = icon_path("actions", "heart", "normal")
+        heart_selected = icon_path("actions", "heart", "selected")
+        if heart_normal:
+            liked = store.current_user_id and store.is_product_liked(store.current_user_id, self.product.id)
+            self.heart_chip = _round_image_chip(
+                heart_normal, heart_selected,
+                pos_hint={"center_x": 0.93, "center_y": base_y},
+                selected=bool(liked),
+                on_release=self.toggle_like,
             )
+            self.add_widget(self.heart_chip)
+        else:
+            self.heart_btn = self._round_icon(
+                "heart-outline", pos_hint={"center_x": 0.93, "center_y": base_y}
+            )
+            self.heart_btn.bind(on_release=self.toggle_like)
+            if store.current_user_id and store.is_product_liked(store.current_user_id, self.product.id):
+                self.heart_btn.icon = "heart"
+            self.add_widget(self.heart_btn)
+
+        pairs = [
+            ("send", base_y - 1 * step),
+            ("comment", base_y - 2 * step),
+            ("tshirt", base_y - 3 * step),
+        ]
+        for name, cy in pairs:
+            normal = icon_path("actions", name, "normal")
+            if normal:
+                chip = _round_image_chip(normal, pos_hint={"center_x": 0.93, "center_y": cy})
+                self.add_widget(chip)
+            else:
+                fallback = {
+                    "send": "send-outline",
+                    "comment": "comment-outline",
+                    "tshirt": "tshirt-crew",
+                }[name]
+                self.add_widget(
+                    self._round_icon(
+                        fallback, pos_hint={"center_x": 0.93, "center_y": cy}
+                    )
+                )
 
     def _round_icon(self, icon_name: str, pos_hint: dict) -> MDIconButton:
         """
@@ -130,4 +179,7 @@ class ProductSlide(FloatLayout):
         if not store.current_user_id:
             return
         liked = store.toggle_like(store.current_user_id, self.product.id)
-        self.heart_btn.icon = "heart" if liked else "heart-outline"
+        if hasattr(self, "heart_chip"):
+            self.heart_chip._img_btn.selected = liked
+        if hasattr(self, "heart_btn"):
+            self.heart_btn.icon = "heart" if liked else "heart-outline"

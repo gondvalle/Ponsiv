@@ -9,6 +9,8 @@ from kivymd.uix.card import MDCard
 from kivymd.uix.fitimage import FitImage
 from kivymd.uix.relativelayout import MDRelativeLayout
 
+from ponsiv.components.image_icon import ImageToggleButton, icon_path
+
 from .screens.feed import FeedScreen
 from .screens.explore import ExploreScreen
 from .screens.looks import LooksScreen
@@ -33,26 +35,39 @@ class BottomBar(MDCard):
         )
         self.on_select = on_select
 
-        row = MDBoxLayout(orientation="horizontal", padding=[dp(8), 0], spacing=dp(8))
+        row = MDBoxLayout(orientation="horizontal", padding=[dp(12), 0], spacing=dp(18))
         self.add_widget(row)
 
-        items = [
-            ("feed",    "home"),
-            ("explore", "magnify"),
-            ("looks",   "tshirt-crew"),
-            ("cart",    "shopping-outline"),
-            ("profile", "account-outline"),
-        ]
+        # nombre lógico -> carpeta dentro de assets/icons/nav/<name>/
+        items = ["feed", "explore", "looks", "cart", "profile"]
 
         self.buttons = {}
-        for name, icon in items:
-            btn = MDIconButton(
-                icon=icon,
-                theme_text_color="Custom",
-                text_color=(0, 0, 0, 0.55),
-                icon_size="24sp",
-                on_release=lambda *_ , n=name: self.select(n),
-            )
+        for name in items:
+            normal = icon_path("nav", name, "normal")
+            selected = icon_path("nav", name, "selected")
+
+            if normal:
+                btn = ImageToggleButton(
+                    normal_source=normal,
+                    selected_source=selected or normal,
+                    size_hint=(None, None),
+                    size=(dp(24), dp(24)),
+                )
+            else:
+                from kivymd.uix.button import MDIconButton
+                fallback = {
+                    "feed": "home",
+                    "explore": "magnify",
+                    "looks": "tshirt-crew",
+                    "cart": "shopping-outline",
+                    "profile": "account-outline",
+                }[name]
+                btn = MDIconButton(icon=fallback, theme_text_color="Custom", text_color=(0, 0, 0, 0.55))
+
+            def _handler(_, n=name):
+                self.select(n)
+            btn.bind(on_release=_handler)
+
             row.add_widget(btn)
             self.buttons[name] = btn
 
@@ -64,8 +79,12 @@ class BottomBar(MDCard):
 
     def highlight(self, active: str):
         for name, btn in self.buttons.items():
-            alpha = 1.0 if name == active else 0.55
-            btn.text_color = (0, 0, 0, alpha)
+            selected = (name == active)
+            if isinstance(btn, ImageToggleButton):
+                btn.selected = selected
+            else:
+                alpha = 1.0 if selected else 0.55
+                btn.text_color = (0, 0, 0, alpha)
 
 
 class PonsivApp(MDApp):
@@ -82,10 +101,7 @@ class PonsivApp(MDApp):
             md_bg_color=(1, 1, 1, 1),
             elevation=0,
             left_action_items=[],
-            right_action_items=[
-                ["heart-outline", lambda x: None],
-                ["account-outline", lambda x: self.switch_screen("profile")],
-            ],
+            right_action_items=[],
             size_hint=(1, None),
             height=dp(56),
         )
@@ -104,6 +120,44 @@ class PonsivApp(MDApp):
 
         self.top_container.add_widget(top)
         self.top_container.add_widget(logo)
+
+        # contenedor para tus iconos a la derecha
+        right_box = MDBoxLayout(
+            orientation="horizontal",
+            size_hint=(None, None),
+            size=(dp(64), dp(56)),
+            pos_hint={"right": 1, "center_y": 0.5},
+            spacing=dp(8),
+        )
+
+        from ponsiv.components.image_icon import ImageToggleButton, icon_path
+
+        def _img_btn(group, name, on_press):
+            src = icon_path(group, name, "normal")
+            if src:
+                b = ImageToggleButton(
+                    normal_source=src,
+                    size_hint=(None, None),
+                    size=(dp(22), dp(22)),
+                )
+                b.bind(on_release=lambda *_: on_press())
+                return b
+            else:
+                from kivymd.uix.button import MDIconButton
+                fallback = {"heart": "heart-outline", "account": "account-outline"}[name]
+                return MDIconButton(
+                    icon=fallback,
+                    on_release=lambda *_: on_press(),
+                    theme_text_color="Custom",
+                    text_color=(0, 0, 0, 1),
+                    icon_size="22sp",
+                )
+
+        right_box.add_widget(_img_btn("topbar", "heart", lambda: None))
+        right_box.add_widget(_img_btn("topbar", "account", lambda: self.switch_screen("profile")))
+
+        self.top_container.add_widget(right_box)
+
         root.add_widget(self.top_container)
 
         # ── Screens ─────────────────────────────────────────────────────────────
