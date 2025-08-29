@@ -14,6 +14,7 @@ from kivymd.uix.chip import MDChip
 from kivymd.uix.textfield import MDTextField
 
 from ..store import store
+from ponsiv.components.image_icon import single_icon_path
 
 IOS_BG = (0.965, 0.973, 0.985, 1)
 IOS_TEXT = (0, 0, 0, 1)
@@ -57,12 +58,16 @@ class ExploreScreen(MDScreen):
             padding=(dp(10), 0),
         )
         row = MDBoxLayout(orientation="horizontal", spacing=dp(6))
-        row.add_widget(MDIconButton(
-            icon="magnify",
-            theme_text_color="Custom",
-            text_color=IOS_SUB,
-            icon_size="22sp",
-        ))
+        lupa_src = single_icon_path("search", "magnify")
+        if lupa_src:
+            row.add_widget(FitImage(source=lupa_src, size_hint=(None, None), size=(dp(22), dp(22))))
+        else:
+            row.add_widget(MDIconButton(
+                icon="magnify",
+                theme_text_color="Custom",
+                text_color=IOS_SUB,
+                icon_size="22sp",
+            ))
         self.search_tf = MDTextField(
             hint_text="Buscar marcas, estilos o prendas...",
             size_hint_x=1,

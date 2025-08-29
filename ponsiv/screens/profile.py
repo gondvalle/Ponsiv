@@ -9,6 +9,7 @@ from kivymd.uix.card import MDCard
 from kivymd.uix.label import MDLabel
 from kivymd.uix.fitimage import FitImage
 from kivymd.uix.button import MDIconButton
+from ponsiv.components.image_icon import ImageToggleButton, icon_path
 
 from ..store import store
 
@@ -67,12 +68,28 @@ class ProfileScreen(MDScreen):
 
         # Tabs (igual que antes)
         tabs = MDBoxLayout(orientation="horizontal", size_hint=(1, None), height=dp(40),
-                           padding=(dp(8), 0), spacing=dp(6))
-        for icon, active in (("tshirt-crew", False), ("heart", True), ("file-document-outline", False), ("shopping-outline", False)):
-            btn = MDIconButton(icon=icon, theme_text_color="Custom",
-                               text_color=(0, 0, 0, 1 if active else 0.45),
-                               icon_size="22sp")
+                           padding=(dp(8), 0), spacing=dp(16))
+
+        _tab_names = [("tshirt", False), ("heart", True), ("file", False), ("shopping", False)]
+        self._tab_btns = []
+        for name, active in _tab_names:
+            group = "actions"
+            normal = icon_path(group, name if name != "file" else "file", "normal")
+            selected = icon_path(group, name if name != "file" else "file", "selected")
+            if normal:
+                btn = ImageToggleButton(normal_source=normal, selected_source=selected or normal,
+                                        selected=active, size_hint=(None, None), size=(dp(22), dp(22)))
+            else:
+                fallback = {
+                    "tshirt": "tshirt-crew",
+                    "heart": "heart",
+                    "file": "file-document-outline",
+                    "shopping": "shopping-outline",
+                }[name]
+                btn = MDIconButton(icon=fallback, theme_text_color="Custom",
+                                   text_color=(0, 0, 0, 1 if active else 0.45), icon_size="22sp")
             tabs.add_widget(btn)
+            self._tab_btns.append(btn)
         root.add_widget(tabs)
 
         # ── Grid de likes: 1 columna y tarjetas altas para ocupar más pantalla ──
