@@ -1,9 +1,8 @@
-# ponsiv/screens/explore.py
+from pathlib import Path
+import random
 from kivy.metrics import dp
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.floatlayout import FloatLayout
-from pathlib import Path
-from kivy.resources import resource_add_path, resource_find
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -23,24 +22,19 @@ IOS_SUB = (0, 0, 0, 0.6)
 CHIP_BG = (0.93, 0.94, 0.96, 1)
 CHIP_BG_ACTIVE = (0.85, 0.88, 0.92, 1)
 
+# Qué consideramos "verano"
+SUMMER_CATS = ("Vestidos", "Camisetas", "Tops", "Bermudas")
+
+
 class ExploreScreen(MDScreen):
-    """
-    Explore estilo iPhone:
-      - Buscador 'pill' sin subrayado
-      - Chips claros (check solo en activo)
-      - Hero banner (assets/banners/verano.{png|jpg|jpeg}) con fallback
-      - Tendencias (cards compactas) + filtro por chip y por texto
-      - Categorías (icono opcional + etiqueta)
-    """
-
     def on_pre_enter(self, *args):
-        assets_base = Path(__file__).resolve().parents[2] / "assets"
-        resource_add_path(str(assets_base))
-
         if getattr(self, "_initialized", False):
             self._apply_active_filters()
             return
 
+        self._selected_category = None  # categoría elegida en tarjetas o banner
+
+        # Scroll raíz
         root_scroll = ScrollView(size_hint=(1, 1))
         root = MDBoxLayout(
             orientation="vertical",
@@ -51,7 +45,8 @@ class ExploreScreen(MDScreen):
         root.bind(minimum_height=root.setter("height"))
         root_scroll.add_widget(root)
         self.add_widget(root_scroll)
-        # ---------- HERO BANNER (AHORA ARRIBA) ----------
+
+        # ---------- HERO BANNER (ARRIBA, CLICKABLE "VERANO") ----------
         banner_card = MDCard(
             size_hint=(1, None),
             height=dp(140),
@@ -72,9 +67,31 @@ class ExploreScreen(MDScreen):
             pos_hint={"x": 0.05, "center_y": 0.5},
         ))
         banner_card.add_widget(fl)
+        # Tap → filtro verano
+        def _banner_tap(inst, touch):
+            if inst.collide_point(*touch.pos):
+                self._selected_category = "__summer__"
+                self._active_chip = "Todos"
+                self._apply_active_filters()
+                return True
+            return False
+        banner_card.bind(on_touch_up=_banner_tap)
         root.add_widget(banner_card)
 
-        # ---------- BUSCADOR (pastilla iOS) ----------
+        # ---------- CONTENIDO con FONDO BLANCO opaco (no se ve el banner detrás) ----------
+        content_wrap = MDBoxLayout(orientation="vertical", spacing=dp(12), size_hint_y=None)
+        content_wrap.bind(minimum_height=content_wrap.setter("height"))
+        from kivy.graphics import Color, Rectangle
+        with content_wrap.canvas.before:
+            Color(1, 1, 1, 1)
+            _bg = Rectangle(pos=content_wrap.pos, size=content_wrap.size)
+        def _sync_bg(*_):
+            _bg.pos = content_wrap.pos
+            _bg.size = content_wrap.size
+        content_wrap.bind(pos=_sync_bg, size=_sync_bg)
+        root.add_widget(content_wrap)
+
+        # ---------- BUSCADOR ----------
         search_card = MDCard(
             size_hint=(1, None),
             height=dp(44),
@@ -88,17 +105,9 @@ class ExploreScreen(MDScreen):
         if lupa_src:
             row.add_widget(FitImage(source=lupa_src, size_hint=(None, None), size=(dp(22), dp(22))))
         else:
-            row.add_widget(MDIconButton(
-                icon="magnify",
-                theme_text_color="Custom",
-                text_color=IOS_SUB,
-                icon_size="22sp",
-            ))
-        self.search_tf = MDTextField(
-            hint_text="Buscar marcas, estilos o prendas...",
-            size_hint_x=1,
-        )
-        # Ocultar la línea inferior del textfield para el look "pill"
+            row.add_widget(MDIconButton(icon="magnify", theme_text_color="Custom", text_color=IOS_SUB, icon_size="22sp"))
+        self.search_tf = MDTextField(hint_text="Buscar marcas, estilos o prendas...", size_hint_x=1)
+        # ocultar subrayado
         for prop in ("line_color_normal", "line_color_focus", "line_color_disabled",
                      "error_color", "hint_text_color_normal", "hint_text_color_focus"):
             try:
@@ -112,37 +121,29 @@ class ExploreScreen(MDScreen):
         except Exception:
             pass
         self.search_tf.bind(text=lambda *_: self._apply_active_filters())
-
         row.add_widget(self.search_tf)
         search_card.add_widget(row)
-        root.add_widget(search_card)
+        content_wrap.add_widget(search_card)
 
-        # ---------- CHIPS (creamos, pero NO activamos aún) ----------
+        # ---------- CHIPS (puedes dejarlos, pero “Verano” ya lo hace el banner) ----------
         chips_scroll = ScrollView(size_hint=(1, None), height=dp(40), do_scroll_y=False)
-        self.chips_row = MDBoxLayout(
-            orientation="horizontal",
-            spacing=dp(8),
-            padding=(dp(2), 0),
-            size_hint_x=None,
-        )
+        self.chips_row = MDBoxLayout(orientation="horizontal", spacing=dp(8), padding=(dp(2), 0), size_hint_x=None)
         self.chips_row.bind(minimum_width=self.chips_row.setter("width"))
         chips_scroll.add_widget(self.chips_row)
-        root.add_widget(chips_scroll)
+        content_wrap.add_widget(chips_scroll)
 
         self._chip_filters = {
             "Todos": [],
             "Camisas": ["CAMISA"],
             "Zapatillas": ["ZAPATILLA", "SNEAKER", "NIKE", "ADIDAS"],
             "Pantalones": ["PANTALON", "PANTALÓN"],
-            "Verano": ["VESTIDO", "CAMISETA", "TOP", "BERMUDA"],
             "Chaquetas": ["CHAQUETA", "SOBRECAMISA"],
             "Vestidos": ["VESTIDO"],
+            "Tops": ["TOP"],
+            "Camisetas": ["CAMISETA"],
         }
-        self._chips = []
-        self._active_chip = None
-        first_chip = None
-        first_label = None
-        for idx, label in enumerate(self._chip_filters.keys()):
+        self._chips, self._active_chip = [], "Todos"
+        for label in self._chip_filters.keys():
             chip = MDChip(text=label)
             try:
                 chip.md_bg_color = CHIP_BG
@@ -153,79 +154,42 @@ class ExploreScreen(MDScreen):
             chip.bind(on_release=lambda inst, l=label: self._select_chip(inst, l))
             self.chips_row.add_widget(chip)
             self._chips.append(chip)
-            if idx == 0:
-                first_chip, first_label = chip, label  # lo activamos al final
 
         # ---------- TENDENCIAS ----------
-        root.add_widget(self._section_title("Tendencias del momento"))
+        content_wrap.add_widget(self._section_title("Tendencias del momento"))
         self.trend_scroll = ScrollView(size_hint=(1, None), height=dp(200), do_scroll_y=False)
-        self.trend_row = MDBoxLayout(
-            orientation="horizontal",
-            spacing=dp(10),
-            padding=(dp(2), 0),
-            size_hint_x=None,
-        )
+        self.trend_row = MDBoxLayout(orientation="horizontal", spacing=dp(10), padding=(dp(2), 0), size_hint_x=None)
         self.trend_row.bind(minimum_width=self.trend_row.setter("width"))
         self.trend_scroll.add_widget(self.trend_row)
-        root.add_widget(self.trend_scroll)
+        content_wrap.add_widget(self.trend_scroll)
 
-        # Separador fino (iOS)
-        root.add_widget(self._hairline())
+        # separador fino
+        content_wrap.add_widget(self._hairline())
 
-        # ---------- CATEGORÍAS ----------
-        root.add_widget(self._section_title("Categorías"))
-
-        # contenedor con fondo opaco para evitar que se vea el banner detrás
-        cat_container = MDBoxLayout(size_hint=(1, None), height=dp(120))
-        with cat_container.canvas.before:
-            from kivy.graphics import Color, Rectangle
-            Color(1, 1, 1, 1)
-            _rect = Rectangle(pos=cat_container.pos, size=cat_container.size)
-
-        def _upd(*_):
-            _rect.pos = cat_container.pos
-            _rect.size = cat_container.size
-
-        cat_container.bind(pos=_upd, size=_upd)
-
-        cat_scroll = ScrollView(size_hint=(1, 1), do_scroll_y=False)
-        self.cat_row = MDBoxLayout(
-            orientation="horizontal",
-            spacing=dp(10),
-            padding=(dp(2), 0),
-            size_hint_x=None,
-        )
+        # ---------- CATEGORÍAS (por JSON) ----------
+        content_wrap.add_widget(self._section_title("Categorías"))
+        cat_scroll = ScrollView(size_hint=(1, None), height=dp(120), do_scroll_y=False)
+        self.cat_row = MDBoxLayout(orientation="horizontal", spacing=dp(10), padding=(dp(2), 0), size_hint_x=None)
         self.cat_row.bind(minimum_width=self.cat_row.setter("width"))
         cat_scroll.add_widget(self.cat_row)
-        cat_container.add_widget(cat_scroll)
+        content_wrap.add_widget(cat_scroll)
 
-        root.add_widget(cat_container)
-        self._render_categories(["Vestidos", "Blusas", "Pantalones", "Sudaderas", "Faldas", "Abrigos"])
+        self._render_categories_dynamic()
 
-        # ✅ AHORA que ya existe trend_row, activamos el primer chip y renderizamos
-        if first_chip and first_label:
-            self._select_chip(first_chip, first_label)
-        else:
-            self._apply_active_filters()
-
+        # primera carga
+        self._apply_active_filters()
         self._initialized = True
 
     # --------------------------- helpers UI ---------------------------
     def _section_title(self, txt: str) -> MDLabel:
-        return MDLabel(
-            text=txt,
-            bold=True,
-            font_size="16sp",
-            theme_text_color="Custom",
-            text_color=IOS_TEXT,
-            size_hint=(1, None),
-            height=dp(24),
-        )
+        return MDLabel(text=txt, bold=True, font_size="16sp",
+                       theme_text_color="Custom", text_color=IOS_TEXT,
+                       size_hint=(1, None), height=dp(24))
 
     def _hairline(self):
         box = MDBoxLayout(size_hint=(1, None), height=dp(1), opacity=0.9)
+        from kivy.graphics import Color, Rectangle
         with box.canvas:
-            from kivy.graphics import Color, Rectangle
             Color(0, 0, 0, 0.08)
             rect = Rectangle(pos=box.pos, size=box.size)
         def _upd(*_):
@@ -235,26 +199,23 @@ class ExploreScreen(MDScreen):
         return box
 
     def _get_banner_image(self) -> str | None:
-        # prueba primero rutas relativas a assets registrados
-        for name in ("banners/verano.png", "banners/verano.jpg", "banners/verano.jpeg"):
-            found = resource_find(name)
-            if found:
-                return found
+        base = Path(__file__).resolve().parents[2] / "assets" / "banners"
+        for name in ("verano.png", "verano.jpg", "verano.jpeg"):
+            p = base / name
+            if p.exists():
+                return str(p)
+        # fallback
         for p in store.products.values():
             if p.images:
                 return p.images[0]
         return None
 
     def _render_trending(self, products):
+        from kivymd.uix.card import MDCard
         self.trend_row.clear_widgets()
         for p in products:
-            card = MDCard(
-                size_hint=(None, None),
-                size=(dp(120), dp(180)),
-                radius=[dp(12)],
-                elevation=0,
-                md_bg_color=(1, 1, 1, 1),
-            )
+            card = MDCard(size_hint=(None, None), size=(dp(120), dp(180)),
+                          radius=[dp(12)], elevation=0, md_bg_color=(1, 1, 1, 1))
             v = MDBoxLayout(orientation="vertical")
             if p.images:
                 v.add_widget(FitImage(source=p.images[0], size_hint=(1, 1)))
@@ -270,24 +231,39 @@ class ExploreScreen(MDScreen):
             card.bind(on_touch_up=lambda inst, touch, pid=p.id: self._open_detail_if_hit(inst, touch, pid))
             self.trend_row.add_widget(card)
 
-    def _render_categories(self, names):
+    def _render_categories_dynamic(self):
+        """Dibuja categorías a partir del campo 'categoria' de los JSON y
+        usa una IMAGEN ALEATORIA de un producto de esa categoría."""
+        from kivymd.uix.card import MDCard
         self.cat_row.clear_widgets()
-        base = Path(__file__).resolve().parent.parent.parent / "assets" / "categories"
-        for name in names:
+        cats = store.get_categories()
+        if not cats:
+            return
+        for cat in cats:
+            prods = [p for p in store.get_products_by_category(cat) if p.images]
+            thumb = random.choice(prods).images[0] if prods else None
+
             wrap = MDBoxLayout(orientation="vertical", size_hint=(None, None), size=(dp(82), dp(110)))
             box = MDCard(size_hint=(1, None), height=dp(78), radius=[dp(14)], elevation=0, md_bg_color=(1, 1, 1, 1))
-            icon = base / f"{name}.png"
-            if icon.exists():
-                box.add_widget(FitImage(source=str(icon), size_hint=(1, 1)))
+            if thumb:
+                box.add_widget(FitImage(source=thumb, size_hint=(1, 1)))
             wrap.add_widget(box)
-            wrap.add_widget(MDLabel(text=name, halign="center", font_size="12sp",
+            wrap.add_widget(MDLabel(text=cat, halign="center", font_size="12sp",
                                     theme_text_color="Custom", text_color=(0, 0, 0, 0.9),
                                     size_hint=(1, None), height=dp(26)))
+            # Tap → filtra por categoría
+            def _tap(inst, touch, c=cat):
+                if inst.collide_point(*touch.pos):
+                    self._selected_category = c
+                    self._active_chip = "Todos"
+                    self._apply_active_filters()
+                    return True
+                return False
+            wrap.bind(on_touch_up=_tap)
             self.cat_row.add_widget(wrap)
 
-    # --------------------------- interacción ---------------------------
+    # --------------------------- interacción & filtros ---------------------------
     def _select_chip(self, chip: MDChip, label: str):
-        # estilo activo/inactivo + check solo en activo
         for c in self._chips:
             try:
                 c.icon = ""
@@ -302,25 +278,32 @@ class ExploreScreen(MDScreen):
         except Exception:
             pass
         self._active_chip = label
+        self._selected_category = None  # si tocas chip, sales de un filtro de categoría
         self._apply_active_filters()
 
     def _apply_active_filters(self):
-        if not hasattr(self, "trend_row"):
-            return  # guard extra por seguridad
-
-        # 1) chip
-        kws = self._chip_filters.get(self._active_chip or "Todos", [])
         items = list(store.products.values())
-        if kws:
-            up = lambda s: (s or "").upper()
-            items = [p for p in items if any(k in up(p.title) for k in kws)]
-        # 2) texto buscador (título o marca)
+
+        # 1) Filtro por categoría elegida (banner o tarjeta)
+        if self._selected_category:
+            if self._selected_category == "__summer__":
+                items = [p for p in items if (p.category in SUMMER_CATS)]
+            else:
+                items = [p for p in items if (p.category == self._selected_category)]
+        else:
+            # 2) Chips (si no hay categoría activa)
+            kws = self._chip_filters.get(self._active_chip or "Todos", [])
+            if kws:
+                up = lambda s: (s or "").upper()
+                items = [p for p in items if any(k in up(p.title) for k in kws)]
+
+        # 3) Texto búsqueda
         q = (self.search_tf.text or "").strip().lower()
         if q:
             items = [p for p in items if q in (p.title or "").lower() or q in (p.brand or "").lower()]
-        # 3) ORDENAR POR MÁS LIKES
-        items = store.sort_products_by_likes(items)
 
+        # 4) Ordenar por likes
+        items = store.sort_products_by_likes(items)
         self._render_trending(items)
 
     def _open_detail_if_hit(self, widget, touch, product_id: str):
@@ -330,3 +313,4 @@ class ExploreScreen(MDScreen):
             self.manager.current = "detail"
             return True
         return False
+

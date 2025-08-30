@@ -203,6 +203,7 @@ class PonsivStore:
             title = data.get("nombre", pid)
             price = data.get("precio", 0.0)
             sizes = data.get("tallas", [])
+            category = data.get("categoria") or None
 
             image_file = None
             for ext in (".jpg", ".png"):
@@ -227,8 +228,16 @@ class PonsivStore:
                 sizes=sizes,
                 images=images,
                 logo=str(logo_file) if logo_file else None,
+                category=category,
             )
             self.products[product.id] = product
+
+    def get_categories(self) -> list[str]:
+        return sorted({p.category for p in self.products.values() if p.category})
+
+    def get_products_by_category(self, category: str) -> list[Product]:
+        c = (category or "").lower()
+        return [p for p in self.products.values() if (p.category or "").lower() == c]
 
     # Cart management -----------------------------------------------------
     def add_to_cart(self, product_id: str) -> None:
@@ -256,3 +265,4 @@ class PonsivStore:
 
 store = PonsivStore()
 store.load_seed()
+
