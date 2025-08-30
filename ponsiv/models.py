@@ -11,6 +11,7 @@ class Product:
     sizes: List[str]
     images: List[str]
     logo: Optional[str] = None
+    category: Optional[str] = None
 
 
 @dataclass
@@ -51,3 +52,4 @@ class Order:
     size: str
     status: str
     date: str
+
