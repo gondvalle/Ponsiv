@@ -163,6 +163,29 @@ class PonsivStore:
         )
         return [row["product_id"] for row in cur.fetchall()]
 
+    # Trending / Like counts ---------------------------------------------------
+    def get_like_count(self, product_id: str) -> int:
+        cur = self.conn.execute(
+            "SELECT COUNT(*) AS c FROM likes WHERE product_id=?", (product_id,)
+        )
+        row = cur.fetchone()
+        return int(row["c"] if row and row["c"] is not None else 0)
+
+    def get_all_like_counts(self) -> dict[str, int]:
+        cur = self.conn.execute(
+            "SELECT product_id, COUNT(*) AS c FROM likes GROUP BY product_id"
+        )
+        return {row["product_id"]: int(row["c"]) for row in cur.fetchall()}
+
+    def sort_products_by_likes(self, products):
+        counts = self.get_all_like_counts()
+        # 1º likes desc, 2º título para desempatar
+        return sorted(
+            products,
+            key=lambda p: (counts.get(p.id, 0), (p.title or "")),
+            reverse=True,
+        )
+
     # ----------------------------------------------------------------- Seed --
     def load_seed(self) -> None:
         """Load product data from the ``assets`` directory."""

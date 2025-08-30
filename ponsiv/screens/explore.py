@@ -47,6 +47,28 @@ class ExploreScreen(MDScreen):
         root.bind(minimum_height=root.setter("height"))
         root_scroll.add_widget(root)
         self.add_widget(root_scroll)
+        # ---------- HERO BANNER (AHORA ARRIBA) ----------
+        banner_card = MDCard(
+            size_hint=(1, None),
+            height=dp(140),
+            radius=[dp(16)],
+            elevation=0,
+            md_bg_color=(1, 1, 1, 1),
+        )
+        fl = FloatLayout()
+        img_src = self._get_banner_image()
+        if img_src:
+            fl.add_widget(FitImage(source=img_src, size_hint=(1, 1)))
+        fl.add_widget(MDLabel(
+            text="VERANO",
+            bold=True,
+            font_size="28sp",
+            theme_text_color="Custom",
+            text_color=(1, 1, 1, 1),
+            pos_hint={"x": 0.05, "center_y": 0.5},
+        ))
+        banner_card.add_widget(fl)
+        root.add_widget(banner_card)
 
         # ---------- BUSCADOR (pastilla iOS) ----------
         search_card = MDCard(
@@ -129,29 +151,6 @@ class ExploreScreen(MDScreen):
             self._chips.append(chip)
             if idx == 0:
                 first_chip, first_label = chip, label  # lo activamos al final
-
-        # ---------- HERO BANNER ----------
-        banner_card = MDCard(
-            size_hint=(1, None),
-            height=dp(140),
-            radius=[dp(16)],
-            elevation=0,
-            md_bg_color=(1, 1, 1, 1),
-        )
-        fl = FloatLayout()
-        img_src = self._get_banner_image()
-        if img_src:
-            fl.add_widget(FitImage(source=img_src, size_hint=(1, 1)))
-        fl.add_widget(MDLabel(
-            text="VERANO",
-            bold=True,
-            font_size="28sp",
-            theme_text_color="Custom",
-            text_color=(1, 1, 1, 1),
-            pos_hint={"x": 0.05, "center_y": 0.5},
-        ))
-        banner_card.add_widget(fl)
-        root.add_widget(banner_card)
 
         # ---------- TENDENCIAS ----------
         root.add_widget(self._section_title("Tendencias del momento"))
@@ -300,6 +299,9 @@ class ExploreScreen(MDScreen):
         q = (self.search_tf.text or "").strip().lower()
         if q:
             items = [p for p in items if q in (p.title or "").lower() or q in (p.brand or "").lower()]
+        # 3) ORDENAR POR MÁS LIKES
+        items = store.sort_products_by_likes(items)
+
         self._render_trending(items)
 
     def _open_detail_if_hit(self, widget, touch, product_id: str):
