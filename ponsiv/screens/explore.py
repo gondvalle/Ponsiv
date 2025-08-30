@@ -3,6 +3,7 @@ from kivy.metrics import dp
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.floatlayout import FloatLayout
 from pathlib import Path
+from kivy.resources import resource_add_path, resource_find
 
 from kivymd.uix.screen import MDScreen
 from kivymd.uix.boxlayout import MDBoxLayout
@@ -33,6 +34,9 @@ class ExploreScreen(MDScreen):
     """
 
     def on_pre_enter(self, *args):
+        assets_base = Path(__file__).resolve().parents[2] / "assets"
+        resource_add_path(str(assets_base))
+
         if getattr(self, "_initialized", False):
             self._apply_active_filters()
             return
@@ -170,7 +174,21 @@ class ExploreScreen(MDScreen):
 
         # ---------- CATEGORÍAS ----------
         root.add_widget(self._section_title("Categorías"))
-        cat_scroll = ScrollView(size_hint=(1, None), height=dp(120), do_scroll_y=False)
+
+        # contenedor con fondo opaco para evitar que se vea el banner detrás
+        cat_container = MDBoxLayout(size_hint=(1, None), height=dp(120))
+        with cat_container.canvas.before:
+            from kivy.graphics import Color, Rectangle
+            Color(1, 1, 1, 1)
+            _rect = Rectangle(pos=cat_container.pos, size=cat_container.size)
+
+        def _upd(*_):
+            _rect.pos = cat_container.pos
+            _rect.size = cat_container.size
+
+        cat_container.bind(pos=_upd, size=_upd)
+
+        cat_scroll = ScrollView(size_hint=(1, 1), do_scroll_y=False)
         self.cat_row = MDBoxLayout(
             orientation="horizontal",
             spacing=dp(10),
@@ -179,7 +197,9 @@ class ExploreScreen(MDScreen):
         )
         self.cat_row.bind(minimum_width=self.cat_row.setter("width"))
         cat_scroll.add_widget(self.cat_row)
-        root.add_widget(cat_scroll)
+        cat_container.add_widget(cat_scroll)
+
+        root.add_widget(cat_container)
         self._render_categories(["Vestidos", "Blusas", "Pantalones", "Sudaderas", "Faldas", "Abrigos"])
 
         # ✅ AHORA que ya existe trend_row, activamos el primer chip y renderizamos
@@ -215,12 +235,11 @@ class ExploreScreen(MDScreen):
         return box
 
     def _get_banner_image(self) -> str | None:
-        # Busca assets/banners/verano.(png|jpg|jpeg); si no, cae a 1ª imagen de producto
-        base = Path(__file__).resolve().parent.parent.parent / "assets" / "banners"
-        for name in ("verano.png", "verano.jpg", "verano.jpeg"):
-            p = base / name
-            if p.exists():
-                return str(p)
+        # prueba primero rutas relativas a assets registrados
+        for name in ("banners/verano.png", "banners/verano.jpg", "banners/verano.jpeg"):
+            found = resource_find(name)
+            if found:
+                return found
         for p in store.products.values():
             if p.images:
                 return p.images[0]
